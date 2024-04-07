@@ -1,6 +1,6 @@
 use Token::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Token {
     Num(u32),
 }
