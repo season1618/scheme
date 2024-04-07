@@ -23,6 +23,11 @@ impl<'a> Lexer<'a> {
     fn tokenize(&mut self) -> Result<Vec<Token>, String> {
         let mut tokens = Vec::new();
         while let Some(c) = self.peek_char() {
+            if c.is_whitespace() {
+                self.next_char();
+                continue;
+            }
+
             if c.is_alphanumeric() {
                 tokens.push(self.read_num());
                 continue;
