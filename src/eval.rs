@@ -1,3 +1,4 @@
+use std::fmt;
 use crate::parser::Expr;
 
 use Expr::*;
@@ -8,6 +9,16 @@ pub enum Data {
     Num(u32),
     Bool(bool),
     Str(String),
+}
+
+impl fmt::Display for Data {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Data::Num(val) => write!(f, "{}: number", val),
+            Data::Bool(val) => write!(f, "{}: bool", if *val { "#t" } else { "#f" }),
+            Data::Str(val) => write!(f, "{}: string", val),
+        }
+    }
 }
 
 pub fn eval(expr: Expr) -> Result<Data, String> {

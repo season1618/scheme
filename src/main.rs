@@ -9,8 +9,6 @@ use crate::lexer::tokenize;
 use crate::parser::parse;
 use crate::eval::eval;
 
-use eval::Data::*;
-
 fn main() {
     let args: Vec<String> = env::args().collect();
     let code = fs::read_to_string(&args[1]).expect("file not found");
@@ -35,5 +33,5 @@ fn main() {
             return;
         },
     };
-    println!("{:?}", res);
+    println!("{}", res);
 }
