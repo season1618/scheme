@@ -1,9 +1,10 @@
 use Token::*;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum Token {
     Num(u32),
     Bool(bool),
+    Str(String),
 }
 
 pub fn tokenize(code: &str) -> Result<Vec<Token>, String> {
@@ -29,6 +30,11 @@ impl<'a> Lexer<'a> {
                 continue;
             }
 
+            if c == '"' {
+                tokens.push(self.read_string()?);
+                continue;
+            }
+
             if c.is_alphanumeric() {
                 tokens.push(self.read_num());
                 continue;
@@ -48,6 +54,20 @@ impl<'a> Lexer<'a> {
         }
 
         Ok(tokens)
+    }
+
+    fn read_string(&mut self) -> Result<Token, String> {
+        self.next_char();
+
+        let mut s = String::new();
+        while let Some(c) = self.next_char() {
+            match c {
+                '"' => return Ok(Str(s)),
+                '\\' => s.push(self.next_char().unwrap()),
+                c => s.push(c),
+            }
+        }
+        Err(String::from("expect '\"'"))
     }
 
     fn read_num(&mut self) -> Token {

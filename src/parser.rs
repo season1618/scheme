@@ -7,6 +7,7 @@ use Expr::*;
 pub enum Expr {
     Num(u32),
     Bool(bool),
+    Str(String),
 }
 
 pub fn parse(tokens: Vec<Token>) -> Result<Expr, String> {
@@ -31,13 +32,14 @@ impl Parser {
         let expr = match self.next_token()? {
             Token::Num(val) => Expr::Num(val),
             Token::Bool(val) => Expr::Bool(val),
+            Token::Str(val) => Expr::Str(val),
         };
         Ok(expr)
     }
 
     fn next_token(&mut self) -> Result<Token, String> {
         if self.idx < self.tokens.len() {
-            let token = self.tokens[self.idx];
+            let token = self.tokens[self.idx].clone();
             self.idx += 1;
             Ok(token)
         } else {
