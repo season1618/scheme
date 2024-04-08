@@ -2,6 +2,10 @@ use Token::*;
 
 #[derive(Debug, Clone)]
 pub enum Token {
+    OpenParen,
+    CloseParen,
+    Keyword(String),
+    Ident(String),
     Num(u32),
     Bool(bool),
     Str(String),
@@ -35,8 +39,23 @@ impl<'a> Lexer<'a> {
                 continue;
             }
 
-            if c.is_alphanumeric() {
+            if self.next_if("(") {
+                tokens.push(OpenParen);
+                continue;
+            }
+
+            if self.next_if(")") {
+                tokens.push(CloseParen);
+                continue;
+            }
+
+            if c.is_ascii_digit() {
                 tokens.push(self.read_num());
+                continue;
+            }
+
+            if is_ident_char(c) {
+                tokens.push(self.read_keyword_ident()?);
                 continue;
             }
 
@@ -54,6 +73,24 @@ impl<'a> Lexer<'a> {
         }
 
         Ok(tokens)
+    }
+
+    fn read_keyword_ident(&mut self) -> Result<Token, String> {
+        let mut s = String::new();
+        while let Some(c) = self.peek_char() {
+            if is_ident_char(c) {
+                self.next_char();
+                s.push(c);
+            } else {
+                break;
+            }
+        }
+
+        Ok(if ["+", "-", "*", "/"].iter().any(|&keyword| keyword == s) {
+            Keyword(s)
+        } else {
+            Ident(s)
+        })
     }
 
     fn read_string(&mut self) -> Result<Token, String> {
@@ -105,4 +142,8 @@ impl<'a> Lexer<'a> {
             None
         }
     }
+}
+
+fn is_ident_char(c: char) -> bool {
+    c.is_ascii_alphanumeric() || "!$%&*+-./<=>?@^_".contains(c)
 }

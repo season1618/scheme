@@ -33,6 +33,7 @@ impl Parser {
             Token::Num(val) => Expr::Num(val),
             Token::Bool(val) => Expr::Bool(val),
             Token::Str(val) => Expr::Str(val),
+            _ => panic!(),
         };
         Ok(expr)
     }
