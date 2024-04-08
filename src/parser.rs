@@ -6,6 +6,7 @@ use Expr::*;
 #[derive(Debug)]
 pub enum Expr {
     Num(u32),
+    Bool(bool),
 }
 
 pub fn parse(tokens: Vec<Token>) -> Result<Expr, String> {
@@ -29,6 +30,7 @@ impl Parser {
     fn parse_expr(&mut self) -> Result<Expr, String> {
         let expr = match self.next_token()? {
             Token::Num(val) => Expr::Num(val),
+            Token::Bool(val) => Expr::Bool(val),
         };
         Ok(expr)
     }

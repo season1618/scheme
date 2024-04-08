@@ -3,6 +3,7 @@ use Token::*;
 #[derive(Debug, Clone, Copy)]
 pub enum Token {
     Num(u32),
+    Bool(bool),
 }
 
 pub fn tokenize(code: &str) -> Result<Vec<Token>, String> {
@@ -33,6 +34,16 @@ impl<'a> Lexer<'a> {
                 continue;
             }
 
+            if self.next_if("#t") {
+                tokens.push(Bool(true));
+                continue;
+            }
+
+            if self.next_if("#f") {
+                tokens.push(Bool(false));
+                continue;
+            }
+
             return Err(format!("invalid token '{}'", self.chs));
         }
 
@@ -50,6 +61,15 @@ impl<'a> Lexer<'a> {
             }
         }
         Num(val)
+    }
+
+    fn next_if(&mut self, expected: &str) -> bool {
+        if let Some(rest) = self.chs.strip_prefix(expected) {
+            self.chs = rest;
+            true
+        } else {
+            false
+        }
     }
 
     fn peek_char(&self) -> Option<char> {
