@@ -67,7 +67,7 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
             env.pop_frame();
             data
         },
-        Expr::Ident(ident) => {
+        Var(ident) => {
             match env.find(&ident) {
                 Some(data) => data,
                 None => return Err(format!("{:?} is undefined", ident)),
