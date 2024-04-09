@@ -13,7 +13,7 @@ pub enum Data {
 
 #[derive(Debug)]
 pub struct Env {
-    env: Vec<Vec<(String, Expr)>>
+    env: Vec<Vec<(String, Data)>>
 }
 
 impl fmt::Display for Data {
@@ -39,8 +39,8 @@ impl Env {
         self.env.pop();
     }
 
-    fn add(&mut self, ident: String, expr: Expr) {
-        self.env.last_mut().unwrap().push((ident, expr));
+    fn add(&mut self, ident: String, data: Data) {
+        self.env.last_mut().unwrap().push((ident, data));
     }
 }
 
@@ -49,7 +49,8 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
         Let { binds, expr } => {
             env.push_frame();
             for (ident, expr) in binds {
-                env.add(ident, expr);
+                let data = eval(expr, env)?;
+                env.add(ident, data);
             }
             let data = eval(*expr, env)?;
             env.pop_frame();
