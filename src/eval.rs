@@ -6,7 +6,7 @@ use Data::*;
 
 #[derive(Debug, Clone)]
 pub enum Data {
-    Proc { args: Vec<String>, expr: Expr },
+    Proc { params: Vec<String>, expr: Expr },
     Num(u32),
     Bool(bool),
     Str(String),
@@ -20,7 +20,7 @@ pub struct Env {
 impl fmt::Display for Data {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Proc { args, expr } => write!(f, "{:?} -> {:?}: procedure", args, expr),
+            Proc { params, expr } => write!(f, "{:?} -> {:?}: procedure", params, expr),
             Data::Num(val) => write!(f, "{}: number", val),
             Data::Bool(val) => write!(f, "{}: bool", if *val { "#t" } else { "#f" }),
             Data::Str(val) => write!(f, "{}: string", val),
@@ -60,7 +60,7 @@ impl Env {
 pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
     let res = match expr {
         Apply { proc, args } => {
-            let Proc { args: params, expr } = eval(*proc.clone(), env)? else {
+            let Proc { params, expr } = eval(*proc.clone(), env)? else {
                 return Err(format!("{:?} is not procedure", proc));
             };
             let args = args.into_iter().map(|arg| eval(arg, env)).collect::<Vec<_>>();
@@ -73,8 +73,8 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
             env.pop_frame();
             data
         },
-        Lambda { args, expr } => {
-            Proc { args, expr: *expr }
+        Lambda { params, expr } => {
+            Proc { params, expr: *expr }
         },
         Let { binds, expr } => {
             env.push_frame();

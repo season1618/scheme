@@ -6,7 +6,7 @@ use Expr::*;
 #[derive(Debug, Clone)]
 pub enum Expr {
     Apply { proc: Box<Expr>, args: Vec<Expr> },
-    Lambda { args: Vec<String>, expr: Box<Expr> },
+    Lambda { params: Vec<String>, expr: Box<Expr> },
     Let { binds: Vec<(String, Expr)>, expr: Box<Expr> },
     Var(String),
     Num(u32),
@@ -39,10 +39,10 @@ impl Parser {
                     Keyword(s) if s == "lambda" => {
                         self.next_token()?;
 
-                        let mut args = Vec::new();
+                        let mut params = Vec::new();
                         self.next_force(OpenParen)?;
                         while let Ok(ident) = self.next_ident() {
-                            args.push(ident);
+                            params.push(ident);
                         }
                         self.next_force(CloseParen)?;
 
@@ -50,7 +50,7 @@ impl Parser {
 
                         self.next_force(CloseParen)?;
 
-                        Lambda { args, expr: Box::new(expr) }
+                        Lambda { params, expr: Box::new(expr) }
                     },
                     Keyword(s) if s == "let" => {
                         self.next_token()?;
