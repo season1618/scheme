@@ -3,8 +3,9 @@ use crate::lexer::Token;
 use Token::*;
 use Expr::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expr {
+    Lambda { args: Vec<String>, expr: Box<Expr> },
     Let { binds: Vec<(String, Expr)>, expr: Box<Expr> },
     Var(String),
     Num(u32),
@@ -34,11 +35,23 @@ impl Parser {
         let expr = match self.next_token()? {
             OpenParen => {
                 match self.next_token()? {
+                    Keyword(s) if s == "lambda" => {
+                        let mut args = Vec::new();
+                        self.next_force(OpenParen)?;
+                        while let Some(ident) = self.next_ident() {
+                            args.push(ident);
+                        }
+                        self.next_force(CloseParen)?;
+
+                        let expr = self.parse_expr()?;
+
+                        Lambda { args, expr: Box::new(expr) }
+                    },
                     Keyword(s) if s == "let" => {
                         let mut binds = Vec::new();
                         self.next_force(OpenParen)?;
                         while self.next_if(OpenParen) {
-                            let ident = self.next_ident()?;
+                            let ident = self.next_ident().ok_or(String::from("expect identifier"))?;
                             let expr = self.parse_expr()?;
                             binds.push((ident, expr));
                             self.next_force(CloseParen)?;
@@ -83,11 +96,21 @@ impl Parser {
         }
     }
 
-    fn next_ident(&mut self) -> Result<String, String> {
-        if let Ident(ident) = self.next_token()? {
-            Ok(ident)
+    fn next_ident(&mut self) -> Option<String> {
+        if let Ident(ident) = self.peek_token()? {
+            self.next_token();
+            Some(ident)
         } else {
-            Err(String::from("expect identifier"))
+            None
+        }
+    }
+
+    fn peek_token(&self) -> Option<Token> {
+        if self.idx < self.tokens.len() {
+            let token = self.tokens[self.idx].clone();
+            Some(token)
+        } else {
+            None
         }
     }
 

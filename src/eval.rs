@@ -6,6 +6,7 @@ use Data::*;
 
 #[derive(Debug, Clone)]
 pub enum Data {
+    Proc { args: Vec<String>, expr: Expr },
     Num(u32),
     Bool(bool),
     Str(String),
@@ -19,6 +20,7 @@ pub struct Env {
 impl fmt::Display for Data {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Proc { args, expr } => write!(f, "{:?} -> {:?}: procedure", args, expr),
             Data::Num(val) => write!(f, "{}: number", val),
             Data::Bool(val) => write!(f, "{}: bool", if *val { "#t" } else { "#f" }),
             Data::Str(val) => write!(f, "{}: string", val),
@@ -57,6 +59,9 @@ impl Env {
 
 pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
     let res = match expr {
+        Lambda { args, expr } => {
+            Proc { args, expr: *expr }
+        },
         Let { binds, expr } => {
             env.push_frame();
             for (ident, expr) in binds {
