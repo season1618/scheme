@@ -11,6 +11,11 @@ pub enum Data {
     Str(String),
 }
 
+#[derive(Debug)]
+pub struct Env {
+    env: Vec<Vec<(String, Expr)>>
+}
+
 impl fmt::Display for Data {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -21,8 +26,35 @@ impl fmt::Display for Data {
     }
 }
 
-pub fn eval(expr: Expr) -> Result<Data, String> {
+impl Env {
+    pub fn new() -> Self {
+        Env { env: Vec::new() }
+    }
+
+    fn push_frame(&mut self) {
+        self.env.push(Vec::new());
+    }
+
+    fn pop_frame(&mut self) {
+        self.env.pop();
+    }
+
+    fn add(&mut self, ident: String, expr: Expr) {
+        self.env.last_mut().unwrap().push((ident, expr));
+    }
+}
+
+pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
     let res = match expr {
+        Let { binds, expr } => {
+            env.push_frame();
+            for (ident, expr) in binds {
+                env.add(ident, expr);
+            }
+            let data = eval(*expr, env)?;
+            env.pop_frame();
+            data
+        },
         Expr::Num(val) => Data::Num(val),
         Expr::Bool(val) => Data::Bool(val),
         Expr::Str(val) => Data::Str(val),

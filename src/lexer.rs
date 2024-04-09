@@ -1,6 +1,6 @@
 use Token::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     OpenParen,
     CloseParen,
@@ -86,7 +86,7 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        Ok(if ["+", "-", "*", "/"].iter().any(|&keyword| keyword == s) {
+        Ok(if ["let", "+", "-", "*", "/"].iter().any(|&keyword| keyword == s) {
             Keyword(s)
         } else {
             Ident(s)

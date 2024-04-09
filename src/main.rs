@@ -7,7 +7,7 @@ use std::fs;
 
 use crate::lexer::tokenize;
 use crate::parser::parse;
-use crate::eval::eval;
+use crate::eval::{eval, Env};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -26,7 +26,7 @@ fn main() {
             return;
         }
     };
-    let res = match eval(nodes) {
+    let res = match eval(nodes, &mut Env::new()) {
         Ok(res) => res,
         Err(err) => {
             eprintln!("{}", err);
