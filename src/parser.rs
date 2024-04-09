@@ -6,6 +6,7 @@ use Expr::*;
 #[derive(Debug)]
 pub enum Expr {
     Let { binds: Vec<(String, Expr)>, expr: Box<Expr> },
+    Ident(String),
     Num(u32),
     Bool(bool),
     Str(String),
@@ -51,6 +52,7 @@ impl Parser {
                     token => return Err(format!("unexpected token {:?}", token)),
                 }
             },
+            Token::Ident(ident) => Expr::Ident(ident),
             Token::Num(val) => Expr::Num(val),
             Token::Bool(val) => Expr::Bool(val),
             Token::Str(val) => Expr::Str(val),
@@ -82,7 +84,7 @@ impl Parser {
     }
 
     fn next_ident(&mut self) -> Result<String, String> {
-        if let Ident(ident) = self.next_token()? {
+        if let Token::Ident(ident) = self.next_token()? {
             Ok(ident)
         } else {
             Err(String::from("expect identifier"))

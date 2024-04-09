@@ -4,7 +4,7 @@ use crate::parser::Expr;
 use Expr::*;
 use Data::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Data {
     Num(u32),
     Bool(bool),
@@ -42,6 +42,17 @@ impl Env {
     fn add(&mut self, ident: String, data: Data) {
         self.env.last_mut().unwrap().push((ident, data));
     }
+
+    fn find(&self, expected: &String) -> Option<Data> {
+        for frame in self.env.iter().rev() {
+            for (ident, data) in frame.iter().rev() {
+                if ident == expected {
+                    return Some(data.clone());
+                }
+            }
+        }
+        None
+    }
 }
 
 pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
@@ -55,6 +66,12 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
             let data = eval(*expr, env)?;
             env.pop_frame();
             data
+        },
+        Expr::Ident(ident) => {
+            match env.find(&ident) {
+                Some(data) => data,
+                None => return Err(format!("{:?} is undefined", ident)),
+            }
         },
         Expr::Num(val) => Data::Num(val),
         Expr::Bool(val) => Data::Bool(val),
