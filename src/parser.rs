@@ -34,7 +34,7 @@ impl Parser {
     fn parse_expr(&mut self) -> Result<Expr, String> {
         let expr = match self.next_token()? {
             OpenParen => {
-                match self.next_token()? {
+                let expr = match self.next_token()? {
                     Keyword(s) if s == "lambda" => {
                         let mut args = Vec::new();
                         self.next_force(OpenParen)?;
@@ -63,7 +63,9 @@ impl Parser {
                         Let { binds, expr: Box::new(expr) }
                     },
                     token => return Err(format!("unexpected token {:?}", token)),
-                }
+                };
+                self.next_force(CloseParen)?;
+                expr
             },
             Ident(ident) => Var(ident),
             Token::Num(val) => Expr::Num(val),
