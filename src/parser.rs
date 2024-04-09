@@ -38,7 +38,7 @@ impl Parser {
                     Keyword(s) if s == "lambda" => {
                         let mut args = Vec::new();
                         self.next_force(OpenParen)?;
-                        while let Some(ident) = self.next_ident() {
+                        while let Ok(ident) = self.next_ident() {
                             args.push(ident);
                         }
                         self.next_force(CloseParen)?;
@@ -51,7 +51,7 @@ impl Parser {
                         let mut binds = Vec::new();
                         self.next_force(OpenParen)?;
                         while self.next_if(OpenParen) {
-                            let ident = self.next_ident().ok_or(String::from("expect identifier"))?;
+                            let ident = self.next_ident()?;
                             let expr = self.parse_expr()?;
                             binds.push((ident, expr));
                             self.next_force(CloseParen)?;
@@ -96,21 +96,21 @@ impl Parser {
         }
     }
 
-    fn next_ident(&mut self) -> Option<String> {
+    fn next_ident(&mut self) -> Result<String, String> {
         if let Ident(ident) = self.peek_token()? {
             self.next_token();
-            Some(ident)
+            Ok(ident)
         } else {
-            None
+            Err(String::from("expect identifier"))
         }
     }
 
-    fn peek_token(&self) -> Option<Token> {
+    fn peek_token(&self) -> Result<Token, String> {
         if self.idx < self.tokens.len() {
             let token = self.tokens[self.idx].clone();
-            Some(token)
+            Ok(token)
         } else {
-            None
+            Err(String::from("no token"))
         }
     }
 
