@@ -59,6 +59,20 @@ impl Env {
 
 pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
     let res = match expr {
+        Apply { proc, args } => {
+            let Proc { args: params, expr } = eval(*proc.clone(), env)? else {
+                return Err(format!("{:?} is not procedure", proc));
+            };
+            let args = args.into_iter().map(|arg| eval(arg, env)).collect::<Vec<_>>();
+
+            env.push_frame();
+            for (param, arg) in params.into_iter().zip(args.into_iter()) {
+                env.add(param, arg?);
+            }
+            let data = eval(expr, env)?;
+            env.pop_frame();
+            data
+        },
         Lambda { args, expr } => {
             Proc { args, expr: *expr }
         },

@@ -5,6 +5,7 @@ use Expr::*;
 
 #[derive(Debug, Clone)]
 pub enum Expr {
+    Apply { proc: Box<Expr>, args: Vec<Expr> },
     Lambda { args: Vec<String>, expr: Box<Expr> },
     Let { binds: Vec<(String, Expr)>, expr: Box<Expr> },
     Var(String),
@@ -34,8 +35,10 @@ impl Parser {
     fn parse_expr(&mut self) -> Result<Expr, String> {
         let expr = match self.next_token()? {
             OpenParen => {
-                let expr = match self.next_token()? {
+                match self.peek_token()? {
                     Keyword(s) if s == "lambda" => {
+                        self.next_token()?;
+
                         let mut args = Vec::new();
                         self.next_force(OpenParen)?;
                         while let Ok(ident) = self.next_ident() {
@@ -45,9 +48,13 @@ impl Parser {
 
                         let expr = self.parse_expr()?;
 
+                        self.next_force(CloseParen)?;
+
                         Lambda { args, expr: Box::new(expr) }
                     },
                     Keyword(s) if s == "let" => {
+                        self.next_token()?;
+
                         let mut binds = Vec::new();
                         self.next_force(OpenParen)?;
                         while self.next_if(OpenParen) {
@@ -60,18 +67,26 @@ impl Parser {
 
                         let expr = self.parse_expr()?;
 
+                        self.next_force(CloseParen)?;
+
                         Let { binds, expr: Box::new(expr) }
                     },
-                    token => return Err(format!("unexpected token {:?}", token)),
-                };
-                self.next_force(CloseParen)?;
-                expr
+                    _ => {
+                        let proc = self.parse_expr()?;
+                        let mut args = Vec::new();
+                        while !self.next_if(CloseParen) {
+                            args.push(self.parse_expr()?);
+                        }
+
+                        Apply { proc: Box::new(proc), args }
+                    },
+                }
             },
             Ident(ident) => Var(ident),
             Token::Num(val) => Expr::Num(val),
             Token::Bool(val) => Expr::Bool(val),
             Token::Str(val) => Expr::Str(val),
-            _ => panic!(),
+            token => return Err(format!("unexpected token {:?}", token)),
         };
         Ok(expr)
     }
