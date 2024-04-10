@@ -86,7 +86,7 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        Ok(if ["lambda", "let", "+", "-", "*", "/"].iter().any(|&keyword| keyword == s) {
+        Ok(if ["lambda", "let", "let*", "+", "-", "*", "/"].iter().any(|&keyword| keyword == s) {
             Keyword(s)
         } else {
             Ident(s)

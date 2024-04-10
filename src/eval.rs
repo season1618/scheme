@@ -88,6 +88,17 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
 
             data
         },
+        LetStar { binds, expr } => {
+            env.push_frame();
+            for (ident, expr) in binds {
+                let data = eval(expr, env)?;
+                env.add(ident, data);
+            }
+            let data = eval(*expr, env)?;
+            env.pop_frame();
+
+            data
+        },
         Var(ident) => {
             match env.find(&ident) {
                 Some(data) => data,

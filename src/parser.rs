@@ -8,6 +8,7 @@ pub enum Expr {
     Apply { proc: Box<Expr>, args: Vec<Expr> },
     Lambda { params: Vec<String>, expr: Box<Expr> },
     Let { binds: Vec<(String, Expr)>, expr: Box<Expr> },
+    LetStar { binds: Vec<(String, Expr)>, expr: Box<Expr> },
     Var(String),
     Num(u32),
     Bool(bool),
@@ -52,7 +53,7 @@ impl Parser {
 
                         Lambda { params, expr: Box::new(expr) }
                     },
-                    Keyword(s) if s == "let" => {
+                    Keyword(s) if s == "let" || s == "let*" => {
                         self.next_token()?;
 
                         let mut binds = Vec::new();
@@ -69,7 +70,11 @@ impl Parser {
 
                         self.next_force(CloseParen)?;
 
-                        Let { binds, expr: Box::new(expr) }
+                        if s == "let" {
+                            Let { binds, expr: Box::new(expr) }
+                        } else {
+                            LetStar { binds, expr: Box::new(expr) }
+                        }
                     },
                     _ => {
                         let proc = self.parse_expr()?;
