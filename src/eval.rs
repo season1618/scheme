@@ -57,6 +57,18 @@ impl Env {
         }
         Err(format!("{:?} is undefined", expected))
     }
+
+    fn set(&mut self, expected: String, new_data: Data) -> Result<Data, String> {
+        for frame in self.env.iter_mut().rev() {
+            for (ident, data) in frame.iter_mut().rev() {
+                if *ident == expected {
+                    *data = new_data.clone();
+                    return Ok(new_data);
+                }
+            }
+        }
+        Err(format!("{:?} is undefined", expected))
+    }
 }
 
 pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
@@ -100,6 +112,10 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
             env.pop_frame();
 
             data
+        },
+        Set { ident, expr } => {
+            let data = eval(*expr, env)?;
+            env.set(ident, data)?
         },
         Var(ident) => env.find(&ident)?,
         Expr::Num(val) => Data::Num(val),
