@@ -113,6 +113,20 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
 
             data
         },
+        LetRec { binds, expr } => {
+            env.push_frame();
+            for (ident, _) in &binds {
+                env.add(ident.clone(), Data::Nil);
+            }
+            for (ident, expr) in binds {
+                let data = eval(expr, env)?;
+                env.set(ident, data);
+            }
+            let data = eval(*expr, env)?;
+            env.pop_frame();
+
+            data
+        },
         Set { ident, expr } => {
             let data = eval(*expr, env)?;
             env.set(ident, data)?
