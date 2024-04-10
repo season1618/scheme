@@ -115,7 +115,7 @@ impl Parser {
 
     fn next_ident(&mut self) -> Result<String, String> {
         if let Ident(ident) = self.peek_token()? {
-            self.next_token();
+            self.idx += 1;
             Ok(ident)
         } else {
             Err(String::from("expect identifier"))
