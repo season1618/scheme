@@ -47,15 +47,15 @@ impl Env {
         self.env.last_mut().unwrap().push((ident, data));
     }
 
-    fn find(&self, expected: &String) -> Option<Data> {
+    fn find(&self, expected: &String) -> Result<Data, String> {
         for frame in self.env.iter().rev() {
             for (ident, data) in frame.iter().rev() {
                 if ident == expected {
-                    return Some(data.clone());
+                    return Ok(data.clone());
                 }
             }
         }
-        None
+        Err(format!("{:?} is undefined", expected))
     }
 }
 
@@ -101,12 +101,7 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
 
             data
         },
-        Var(ident) => {
-            match env.find(&ident) {
-                Some(data) => data,
-                None => return Err(format!("{:?} is undefined", ident)),
-            }
-        },
+        Var(ident) => env.find(&ident)?,
         Expr::Num(val) => Data::Num(val),
         Expr::Bool(val) => Data::Bool(val),
         Expr::Str(val) => Data::Str(val),
