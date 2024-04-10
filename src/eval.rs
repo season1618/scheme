@@ -10,6 +10,7 @@ pub enum Data {
     Num(u32),
     Bool(bool),
     Str(String),
+    Nil,
 }
 
 #[derive(Debug)]
@@ -24,6 +25,7 @@ impl fmt::Display for Data {
             Data::Num(val) => write!(f, "{}: number", val),
             Data::Bool(val) => write!(f, "{}: bool", if *val { "#t" } else { "#f" }),
             Data::Str(val) => write!(f, "{}: string", val),
+            Data::Nil => write!(f, "()"),
         }
     }
 }
@@ -108,6 +110,7 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
         Expr::Num(val) => Data::Num(val),
         Expr::Bool(val) => Data::Bool(val),
         Expr::Str(val) => Data::Str(val),
+        Expr::Nil => Data::Nil,
     };
     Ok(res)
 }

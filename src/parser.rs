@@ -13,6 +13,7 @@ pub enum Expr {
     Num(u32),
     Bool(bool),
     Str(String),
+    Nil,
 }
 
 pub fn parse(tokens: Vec<Token>) -> Result<Expr, String> {
@@ -76,6 +77,7 @@ impl Parser {
                             LetStar { binds, expr: Box::new(expr) }
                         }
                     },
+                    CloseParen => Expr::Nil,
                     _ => {
                         let proc = self.parse_expr()?;
                         let mut args = Vec::new();
