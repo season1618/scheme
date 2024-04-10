@@ -77,13 +77,15 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
             Proc { params, expr: *expr }
         },
         Let { binds, expr } => {
+            let binds = binds.into_iter().map(|(ident, expr)| (ident, eval(expr, env))).collect::<Vec<_>>();
+
             env.push_frame();
-            for (ident, expr) in binds {
-                let data = eval(expr, env)?;
-                env.add(ident, data);
+            for (ident, data) in binds {
+                env.add(ident, data?);
             }
             let data = eval(*expr, env)?;
             env.pop_frame();
+
             data
         },
         Var(ident) => {
