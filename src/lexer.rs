@@ -6,7 +6,7 @@ pub enum Token {
     CloseParen,
     Keyword(String),
     Ident(String),
-    Num(u32),
+    Num(f32),
     Bool(bool),
     Str(String),
 }
@@ -117,7 +117,7 @@ impl<'a> Lexer<'a> {
                 break;
             }
         }
-        Num(val)
+        Num(val as f32)
     }
 
     fn next_if(&mut self, expected: &str) -> bool {

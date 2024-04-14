@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::Add;
+use std::ops::{Add, Sub, Mul, Div};
 use crate::parser::{Expr, OprKind};
 
 use Expr::*;
@@ -9,7 +9,7 @@ use Value::*;
 #[derive(Debug, Clone)]
 pub enum Value {
     Proc(Proc),
-    Num(u32),
+    Num(f32),
     Bool(bool),
     Str(String),
     Nil,
@@ -32,6 +32,42 @@ impl Add for Value {
     fn add(self, other: Self) -> Self::Output {
         match (self, other) {
             (Value::Num(lhs), Value::Num(rhs)) => Ok(Value::Num(lhs + rhs)),
+            (Value::Num(_), rhs) => Err(format!("{:?} is not a number", rhs)),
+            lhs => Err(format!("{:?} is not a number", lhs)),
+        }
+    }
+}
+
+impl Sub for Value {
+    type Output = Result<Self, String>;
+
+    fn sub(self, other: Self) -> Self::Output {
+        match (self, other) {
+            (Value::Num(lhs), Value::Num(rhs)) => Ok(Value::Num(lhs - rhs)),
+            (Value::Num(_), rhs) => Err(format!("{:?} is not a number", rhs)),
+            lhs => Err(format!("{:?} is not a number", lhs)),
+        }
+    }
+}
+
+impl Mul for Value {
+    type Output = Result<Self, String>;
+
+    fn mul(self, other: Self) -> Self::Output {
+        match (self, other) {
+            (Value::Num(lhs), Value::Num(rhs)) => Ok(Value::Num(lhs * rhs)),
+            (Value::Num(_), rhs) => Err(format!("{:?} is not a number", rhs)),
+            lhs => Err(format!("{:?} is not a number", lhs)),
+        }
+    }
+}
+
+impl Div for Value {
+    type Output = Result<Self, String>;
+
+    fn div(self, other: Self) -> Self::Output {
+        match (self, other) {
+            (Value::Num(lhs), Value::Num(rhs)) => Ok(Value::Num(lhs / rhs)),
             (Value::Num(_), rhs) => Err(format!("{:?} is not a number", rhs)),
             lhs => Err(format!("{:?} is not a number", lhs)),
         }
@@ -169,7 +205,21 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
 
 fn eval_opr(opr: OprKind, args: Vec<Value>) -> Result<Value, String> {
     match opr {
-        Add => args.into_iter().fold(Ok(Value::Num(0)), |sum, val| sum.and_then(|sum| sum + val)),
-        _ => panic!(),
+        Add => args.into_iter().fold(Ok(Value::Num(0.0)), |sum, val| sum.and_then(|sum| sum + val)),
+        Sub => {
+            let (minuend, subtrahends) = {
+                let mut args = args.into_iter();
+                (args.next().ok_or(String::from("'-' requires at least 1 argument")), args)
+            };
+            subtrahends.fold(minuend, |sum, val| sum.and_then(|sum| sum - val))
+        },
+        Mul => args.into_iter().fold(Ok(Value::Num(1.0)), |prod, val| prod.and_then(|prod| prod * val)),
+        Div => {
+            let (dividend, divisors) = {
+                let mut args = args.into_iter();
+                (args.next().ok_or(String::from("'-' requires at least 1 argument")), args)
+            };
+            divisors.fold(dividend, |prod, val| prod.and_then(|prod| prod / val))
+        },
     }
 }

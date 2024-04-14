@@ -14,7 +14,7 @@ pub enum Expr {
     Set { ident: String, expr: Box<Expr> },
     Var(String),
     Opr(OprKind),
-    Num(u32),
+    Num(f32),
     Bool(bool),
     Str(String),
     Nil,
