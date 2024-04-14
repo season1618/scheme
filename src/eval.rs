@@ -1,3 +1,5 @@
+use std::rc::Rc;
+use std::cell::RefCell;
 use crate::data::{Expr, OprKind, Value, Proc};
 
 use Expr::*;
@@ -5,48 +7,50 @@ use OprKind::*;
 use Value::*;
 
 #[derive(Debug)]
-pub struct Env {
-    env: Vec<Vec<(String, Value)>>
-}
+pub struct Env(Rc<RefCell<(Vec<(String, Value)>, Option<Env>)>>);
 
 impl Env {
     pub fn new() -> Self {
-        Env { env: Vec::new() }
+        Env(Rc::new(RefCell::new(
+            (Vec::new(), None)
+        )))
     }
 
-    fn push_frame(&mut self) {
-        self.env.push(Vec::new());
+    fn push_frame(&self) -> Self {
+        Env(Rc::new(RefCell::new(
+            (Vec::new(), Some(Env(Rc::clone(&self.0))))
+        )))
     }
 
-    fn pop_frame(&mut self) {
-        self.env.pop();
-    }
-
-    fn add(&mut self, ident: String, value: Value) {
-        self.env.last_mut().unwrap().push((ident, value));
+    fn add(&self, ident: String, value: Value) {
+        self.0.borrow_mut().0.push((ident, value));
     }
 
     fn find(&self, expected: &String) -> Result<Value, String> {
-        for frame in self.env.iter().rev() {
-            for (ident, value) in frame.iter().rev() {
-                if ident == expected {
-                    return Ok(value.clone());
-                }
+        for (ident, value) in self.0.borrow().0.iter().rev() {
+            if ident == expected {
+                return Ok(value.clone());
             }
         }
-        Err(format!("{:?} is undefined", expected))
+        if let Some(parent) = &self.0.borrow().1 {
+            parent.find(expected)
+        } else {
+            Err(format!("{:?} is undefined", expected))
+        }
     }
 
     fn set(&mut self, expected: String, new_value: Value) -> Result<Value, String> {
-        for frame in self.env.iter_mut().rev() {
-            for (ident, value) in frame.iter_mut().rev() {
-                if *ident == expected {
-                    *value = new_value.clone();
-                    return Ok(new_value);
-                }
+        for (ident, value) in self.0.borrow_mut().0.iter_mut().rev() {
+            if *ident == expected {
+                *value = new_value.clone();
+                return Ok(new_value);
             }
         }
-        Err(format!("{:?} is undefined", expected))
+        if let Some(parent) = &mut self.0.borrow_mut().1 {
+            parent.set(expected, new_value)
+        } else {
+            Err(format!("{:?} is undefined", expected))
+        }
     }
 }
 
@@ -61,12 +65,12 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
             match proc {
                 Proc::Opr(opr) => eval_opr(opr, args)?,
                 Proc::Lambda { params, expr } => {
-                    env.push_frame();
+                    let env = &mut env.push_frame();
                     for (param, arg) in params.into_iter().zip(args.into_iter()) {
                         env.add(param, arg);
                     }
                     let value = eval(expr, env)?;
-                    env.pop_frame();
+
                     value
                 },
             }
@@ -77,28 +81,26 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
         Let { binds, expr } => {
             let binds = binds.into_iter().map(|(ident, expr)| (ident, eval(expr, env))).collect::<Vec<_>>();
 
-            env.push_frame();
+            let env = &mut env.push_frame();
             for (ident, value) in binds {
                 env.add(ident, value?);
             }
             let value = eval(*expr, env)?;
-            env.pop_frame();
 
             value
         },
         LetStar { binds, expr } => {
-            env.push_frame();
+            let env = &mut env.push_frame();
             for (ident, expr) in binds {
                 let value = eval(expr, env)?;
                 env.add(ident, value);
             }
             let value = eval(*expr, env)?;
-            env.pop_frame();
 
             value
         },
         LetRec { binds, expr } => {
-            env.push_frame();
+            let env = &mut env.push_frame();
             for (ident, _) in &binds {
                 env.add(ident.clone(), Value::Nil);
             }
@@ -107,7 +109,6 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
                 env.set(ident, value);
             }
             let value = eval(*expr, env)?;
-            env.pop_frame();
 
             value
         },
