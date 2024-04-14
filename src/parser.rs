@@ -1,37 +1,8 @@
-use crate::lexer::Token;
+use crate::data::{Token, Expr, OprKind};
 
 use Token::*;
 use Expr::*;
 use OprKind::*;
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Expr {
-    Apply { proc: Box<Expr>, args: Vec<Expr> },
-    Lambda { params: Vec<String>, expr: Box<Expr> },
-    Let { binds: Vec<(String, Expr)>, expr: Box<Expr> },
-    LetStar { binds: Vec<(String, Expr)>, expr: Box<Expr> },
-    LetRec { binds: Vec<(String, Expr)>, expr: Box<Expr> },
-    Set { ident: String, expr: Box<Expr> },
-    Var(String),
-    Opr(OprKind),
-    Num(f32),
-    Bool(bool),
-    Str(String),
-    Nil,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum OprKind {
-    Eq,
-    Lt,
-    Le,
-    Gt,
-    Ge,
-    Add,
-    Sub,
-    Mul,
-    Div,
-}
 
 pub fn parse(tokens: Vec<Token>) -> Result<Vec<Expr>, String> {
     let mut parser = Parser::new(tokens);

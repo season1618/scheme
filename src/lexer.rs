@@ -1,15 +1,6 @@
-use Token::*;
+use crate::data::Token;
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Token {
-    OpenParen,
-    CloseParen,
-    Keyword(String),
-    Ident(String),
-    Num(f32),
-    Bool(bool),
-    Str(String),
-}
+use Token::*;
 
 pub fn tokenize(code: &str) -> Result<Vec<Token>, String> {
     let mut lexer = Lexer::new(code);
