@@ -4,7 +4,7 @@ use Token::*;
 use Expr::*;
 use OprKind::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Apply { proc: Box<Expr>, args: Vec<Expr> },
     Lambda { params: Vec<String>, expr: Box<Expr> },
@@ -20,8 +20,13 @@ pub enum Expr {
     Nil,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum OprKind {
+    Eq,
+    Lt,
+    Le,
+    Gt,
+    Ge,
     Add,
     Sub,
     Mul,
@@ -120,6 +125,11 @@ impl Parser {
             },
             Keyword(keyword) => {
                 Opr(match &keyword as &str {
+                    "=" => Eq,
+                    "<" => Lt,
+                    "<=" => Le,
+                    ">" => Gt,
+                    ">=" => Ge,
                     "+" => Add,
                     "-" => Sub,
                     "*" => Mul,

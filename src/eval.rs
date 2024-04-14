@@ -1,4 +1,5 @@
 use std::fmt;
+use std::cmp::Ordering;
 use std::ops::{Add, Sub, Mul, Div};
 use crate::parser::{Expr, OprKind};
 
@@ -6,7 +7,7 @@ use Expr::*;
 use OprKind::*;
 use Value::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Proc(Proc),
     Num(f32),
@@ -15,7 +16,7 @@ pub enum Value {
     Nil,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Proc {
     Lambda { params: Vec<String>, expr: Expr },
     Opr(OprKind),
@@ -24,6 +25,17 @@ pub enum Proc {
 #[derive(Debug)]
 pub struct Env {
     env: Vec<Vec<(String, Value)>>
+}
+
+impl PartialOrd for Value {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (Value::Num(lhs), Value::Num(rhs)) => f32::partial_cmp(lhs, rhs),
+            (Value::Bool(lhs), Value::Bool(rhs)) => bool::partial_cmp(lhs, rhs),
+            (Value::Str(lhs), Value::Str(rhs)) => String::partial_cmp(lhs, rhs),
+            _ => None,
+        }
+    }
 }
 
 impl Add for Value {
@@ -205,6 +217,11 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
 
 fn eval_opr(opr: OprKind, args: Vec<Value>) -> Result<Value, String> {
     match opr {
+        Eq => Ok(Value::Bool(args.windows(2).all(|p| p[0] == p[1]))),
+        Lt => Ok(Value::Bool(args.windows(2).all(|p| p[0] <  p[1]))),
+        Le => Ok(Value::Bool(args.windows(2).all(|p| p[0] <= p[1]))),
+        Gt => Ok(Value::Bool(args.windows(2).all(|p| p[0] >  p[1]))),
+        Ge => Ok(Value::Bool(args.windows(2).all(|p| p[0] >= p[1]))),
         Add => args.into_iter().fold(Ok(Value::Num(0.0)), |sum, val| sum.and_then(|sum| sum + val)),
         Sub => {
             let (minuend, subtrahends) = {
