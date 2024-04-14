@@ -2,10 +2,10 @@ use std::fmt;
 use crate::parser::Expr;
 
 use Expr::*;
-use Data::*;
+use Value::*;
 
 #[derive(Debug, Clone)]
-pub enum Data {
+pub enum Value {
     Proc { params: Vec<String>, expr: Expr },
     Num(u32),
     Bool(bool),
@@ -15,17 +15,17 @@ pub enum Data {
 
 #[derive(Debug)]
 pub struct Env {
-    env: Vec<Vec<(String, Data)>>
+    env: Vec<Vec<(String, Value)>>
 }
 
-impl fmt::Display for Data {
+impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Proc { params, expr } => write!(f, "{:?} -> {:?}: procedure", params, expr),
-            Data::Num(val) => write!(f, "{}: number", val),
-            Data::Bool(val) => write!(f, "{}: bool", if *val { "#t" } else { "#f" }),
-            Data::Str(val) => write!(f, "{}: string", val),
-            Data::Nil => write!(f, "()"),
+            Value::Num(val) => write!(f, "{}: number", val),
+            Value::Bool(val) => write!(f, "{}: bool", if *val { "#t" } else { "#f" }),
+            Value::Str(val) => write!(f, "{}: string", val),
+            Value::Nil => write!(f, "()"),
         }
     }
 }
@@ -43,27 +43,27 @@ impl Env {
         self.env.pop();
     }
 
-    fn add(&mut self, ident: String, data: Data) {
-        self.env.last_mut().unwrap().push((ident, data));
+    fn add(&mut self, ident: String, value: Value) {
+        self.env.last_mut().unwrap().push((ident, value));
     }
 
-    fn find(&self, expected: &String) -> Result<Data, String> {
+    fn find(&self, expected: &String) -> Result<Value, String> {
         for frame in self.env.iter().rev() {
-            for (ident, data) in frame.iter().rev() {
+            for (ident, value) in frame.iter().rev() {
                 if ident == expected {
-                    return Ok(data.clone());
+                    return Ok(value.clone());
                 }
             }
         }
         Err(format!("{:?} is undefined", expected))
     }
 
-    fn set(&mut self, expected: String, new_data: Data) -> Result<Data, String> {
+    fn set(&mut self, expected: String, new_value: Value) -> Result<Value, String> {
         for frame in self.env.iter_mut().rev() {
-            for (ident, data) in frame.iter_mut().rev() {
+            for (ident, value) in frame.iter_mut().rev() {
                 if *ident == expected {
-                    *data = new_data.clone();
-                    return Ok(new_data);
+                    *value = new_value.clone();
+                    return Ok(new_value);
                 }
             }
         }
@@ -71,7 +71,7 @@ impl Env {
     }
 }
 
-pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
+pub fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
     let res = match expr {
         Apply { proc, args } => {
             let Proc { params, expr } = eval(*proc.clone(), env)? else {
@@ -83,9 +83,9 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
             for (param, arg) in params.into_iter().zip(args.into_iter()) {
                 env.add(param, arg?);
             }
-            let data = eval(expr, env)?;
+            let value = eval(expr, env)?;
             env.pop_frame();
-            data
+            value
         },
         Lambda { params, expr } => {
             Proc { params, expr: *expr }
@@ -94,48 +94,48 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Data, String> {
             let binds = binds.into_iter().map(|(ident, expr)| (ident, eval(expr, env))).collect::<Vec<_>>();
 
             env.push_frame();
-            for (ident, data) in binds {
-                env.add(ident, data?);
+            for (ident, value) in binds {
+                env.add(ident, value?);
             }
-            let data = eval(*expr, env)?;
+            let value = eval(*expr, env)?;
             env.pop_frame();
 
-            data
+            value
         },
         LetStar { binds, expr } => {
             env.push_frame();
             for (ident, expr) in binds {
-                let data = eval(expr, env)?;
-                env.add(ident, data);
+                let value = eval(expr, env)?;
+                env.add(ident, value);
             }
-            let data = eval(*expr, env)?;
+            let value = eval(*expr, env)?;
             env.pop_frame();
 
-            data
+            value
         },
         LetRec { binds, expr } => {
             env.push_frame();
             for (ident, _) in &binds {
-                env.add(ident.clone(), Data::Nil);
+                env.add(ident.clone(), Value::Nil);
             }
             for (ident, expr) in binds {
-                let data = eval(expr, env)?;
-                env.set(ident, data);
+                let value = eval(expr, env)?;
+                env.set(ident, value);
             }
-            let data = eval(*expr, env)?;
+            let value = eval(*expr, env)?;
             env.pop_frame();
 
-            data
+            value
         },
         Set { ident, expr } => {
-            let data = eval(*expr, env)?;
-            env.set(ident, data)?
+            let value = eval(*expr, env)?;
+            env.set(ident, value)?
         },
         Var(ident) => env.find(&ident)?,
-        Expr::Num(val) => Data::Num(val),
-        Expr::Bool(val) => Data::Bool(val),
-        Expr::Str(val) => Data::Str(val),
-        Expr::Nil => Data::Nil,
+        Expr::Num(val) => Value::Num(val),
+        Expr::Bool(val) => Value::Bool(val),
+        Expr::Str(val) => Value::Str(val),
+        Expr::Nil => Value::Nil,
     };
     Ok(res)
 }
