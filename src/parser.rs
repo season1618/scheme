@@ -18,9 +18,9 @@ pub enum Expr {
     Nil,
 }
 
-pub fn parse(tokens: Vec<Token>) -> Result<Expr, String> {
+pub fn parse(tokens: Vec<Token>) -> Result<Vec<Expr>, String> {
     let mut parser = Parser::new(tokens);
-    parser.parse_expr()
+    parser.parse()
 }
 
 struct Parser {
@@ -34,6 +34,14 @@ impl Parser {
             tokens,
             idx: 0,
         }
+    }
+
+    fn parse(&mut self) -> Result<Vec<Expr>, String> {
+        let mut vec = Vec::new();
+        while self.idx < self.tokens.len() {
+            vec.push(self.parse_expr()?);
+        }
+        Ok(vec)
     }
 
     fn parse_expr(&mut self) -> Result<Expr, String> {

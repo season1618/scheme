@@ -26,12 +26,11 @@ fn main() {
             return;
         }
     };
-    let res = match eval(nodes, &mut Env::new()) {
-        Ok(res) => res,
-        Err(err) => {
-            eprintln!("{}", err);
-            return;
-        },
-    };
-    println!("{}", res);
+    let mut env = Env::new();
+    for node in nodes {
+        match eval(node, &mut env) {
+            Ok(val) => println!("{}", val),
+            Err(err) => { eprintln!("{}", err); return; },
+        }
+    }
 }
