@@ -1,58 +1,8 @@
-use std::rc::Rc;
-use std::cell::RefCell;
-use crate::data::{Expr, OprKind, Value, Proc};
+use crate::data::{Expr, OprKind, Value, Proc, Env};
 
 use Expr::*;
 use OprKind::*;
 use Value::*;
-
-#[derive(Debug)]
-pub struct Env(Rc<RefCell<(Vec<(String, Value)>, Option<Env>)>>);
-
-impl Env {
-    pub fn new() -> Self {
-        Env(Rc::new(RefCell::new(
-            (Vec::new(), None)
-        )))
-    }
-
-    fn push_frame(&self) -> Self {
-        Env(Rc::new(RefCell::new(
-            (Vec::new(), Some(Env(Rc::clone(&self.0))))
-        )))
-    }
-
-    fn add(&self, ident: String, value: Value) {
-        self.0.borrow_mut().0.push((ident, value));
-    }
-
-    fn find(&self, expected: &String) -> Result<Value, String> {
-        for (ident, value) in self.0.borrow().0.iter().rev() {
-            if ident == expected {
-                return Ok(value.clone());
-            }
-        }
-        if let Some(parent) = &self.0.borrow().1 {
-            parent.find(expected)
-        } else {
-            Err(format!("{:?} is undefined", expected))
-        }
-    }
-
-    fn set(&mut self, expected: String, new_value: Value) -> Result<Value, String> {
-        for (ident, value) in self.0.borrow_mut().0.iter_mut().rev() {
-            if *ident == expected {
-                *value = new_value.clone();
-                return Ok(new_value);
-            }
-        }
-        if let Some(parent) = &mut self.0.borrow_mut().1 {
-            parent.set(expected, new_value)
-        } else {
-            Err(format!("{:?} is undefined", expected))
-        }
-    }
-}
 
 pub fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
     let res = match expr {
@@ -64,7 +14,7 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
 
             match proc {
                 Proc::Opr(opr) => eval_opr(opr, args)?,
-                Proc::Lambda { params, expr } => {
+                Proc::Lambda { env, params, expr } => {
                     let env = &mut env.push_frame();
                     for (param, arg) in params.into_iter().zip(args.into_iter()) {
                         env.add(param, arg);
@@ -76,7 +26,7 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
             }
         },
         Lambda { params, expr } => {
-            Proc(Proc::Lambda { params, expr: *expr })
+            Proc(Proc::Lambda { env: env.push_frame(), params, expr: *expr })
         },
         Let { binds, expr } => {
             let binds = binds.into_iter().map(|(ident, expr)| (ident, eval(expr, env))).collect::<Vec<_>>();

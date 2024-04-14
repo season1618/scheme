@@ -6,9 +6,10 @@ mod eval;
 use std::env;
 use std::fs;
 
+use crate::data::Env;
 use crate::lexer::tokenize;
 use crate::parser::parse;
-use crate::eval::{eval, Env};
+use crate::eval::eval;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

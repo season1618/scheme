@@ -1,6 +1,8 @@
 use std::fmt;
 use std::cmp::Ordering;
 use std::ops::{Add, Sub, Mul, Div};
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use Value::*;
 
@@ -55,14 +57,18 @@ pub enum Value {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Proc {
-    Lambda { params: Vec<String>, expr: Expr },
+    Lambda { env: Env, params: Vec<String>, expr: Expr },
     Opr(OprKind),
 }
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Proc(Proc::Lambda { params, expr }) => write!(f, "{:?} -> {:?}: procedure", params, expr),
+            Proc(Proc::Lambda { env, params, expr }) => {
+                write!(f, "env\n")?;
+                write!(f, "{}", env)?;
+                write!(f, "{:?} -> {:?}: procedure", params, expr)
+            },
             Proc(Proc::Opr(opr)) => write!(f, "{:?}: procedure", opr),
             Value::Num(val) => write!(f, "{}: number", val),
             Value::Bool(val) => write!(f, "{}: bool", if *val { "#t" } else { "#f" }),
@@ -127,6 +133,68 @@ impl Div for Value {
             (Value::Num(lhs), Value::Num(rhs)) => Ok(Value::Num(lhs / rhs)),
             (Value::Num(_), rhs) => Err(format!("{:?} is not a number", rhs)),
             lhs => Err(format!("{:?} is not a number", lhs)),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Env(Rc<RefCell<(Vec<(String, Value)>, Option<Env>)>>);
+
+impl fmt::Display for Env {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let parent = &self.0.borrow().1;
+        if let Some(parent) = parent {
+            parent.fmt(f);
+        }
+        let frame = &self.0.borrow().0;
+        for (ident, value) in frame {
+            write!(f, "{}: {:?}, ", &ident, value)?;
+        }
+        write!(f, "\n")
+    }
+}
+
+impl Env {
+    pub fn new() -> Self {
+        Env(Rc::new(RefCell::new(
+            (Vec::new(), None)
+        )))
+    }
+
+    pub fn push_frame(&self) -> Self {
+        Env(Rc::new(RefCell::new(
+            (Vec::new(), Some(Env(Rc::clone(&self.0))))
+        )))
+    }
+
+    pub fn add(&self, ident: String, value: Value) {
+        self.0.borrow_mut().0.push((ident, value));
+    }
+
+    pub fn find(&self, expected: &String) -> Result<Value, String> {
+        for (ident, value) in self.0.borrow().0.iter().rev() {
+            if ident == expected {
+                return Ok(value.clone());
+            }
+        }
+        if let Some(parent) = &self.0.borrow().1 {
+            parent.find(expected)
+        } else {
+            Err(format!("{:?} is undefined", expected))
+        }
+    }
+
+    pub fn set(&mut self, expected: String, new_value: Value) -> Result<Value, String> {
+        for (ident, value) in self.0.borrow_mut().0.iter_mut().rev() {
+            if *ident == expected {
+                *value = new_value.clone();
+                return Ok(new_value);
+            }
+        }
+        if let Some(parent) = &mut self.0.borrow_mut().1 {
+            parent.set(expected, new_value)
+        } else {
+            Err(format!("{:?} is undefined", expected))
         }
     }
 }
