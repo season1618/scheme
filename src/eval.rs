@@ -1,16 +1,24 @@
 use std::fmt;
-use crate::parser::Expr;
+use std::ops::Add;
+use crate::parser::{Expr, OprKind};
 
 use Expr::*;
+use OprKind::*;
 use Value::*;
 
 #[derive(Debug, Clone)]
 pub enum Value {
-    Proc { params: Vec<String>, expr: Expr },
+    Proc(Proc),
     Num(u32),
     Bool(bool),
     Str(String),
     Nil,
+}
+
+#[derive(Debug, Clone)]
+pub enum Proc {
+    Lambda { params: Vec<String>, expr: Expr },
+    Opr(OprKind),
 }
 
 #[derive(Debug)]
@@ -18,10 +26,23 @@ pub struct Env {
     env: Vec<Vec<(String, Value)>>
 }
 
+impl Add for Value {
+    type Output = Result<Self, String>;
+
+    fn add(self, other: Self) -> Self::Output {
+        match (self, other) {
+            (Value::Num(lhs), Value::Num(rhs)) => Ok(Value::Num(lhs + rhs)),
+            (Value::Num(_), rhs) => Err(format!("{:?} is not a number", rhs)),
+            lhs => Err(format!("{:?} is not a number", lhs)),
+        }
+    }
+}
+
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Proc { params, expr } => write!(f, "{:?} -> {:?}: procedure", params, expr),
+            Proc (Proc::Lambda { params, expr }) => write!(f, "{:?} -> {:?}: procedure", params, expr),
+            Proc(Proc::Opr(opr)) => write!(f, "{:?}: procedure", opr),
             Value::Num(val) => write!(f, "{}: number", val),
             Value::Bool(val) => write!(f, "{}: bool", if *val { "#t" } else { "#f" }),
             Value::Str(val) => write!(f, "{}: string", val),
@@ -74,21 +95,26 @@ impl Env {
 pub fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
     let res = match expr {
         Apply { proc, args } => {
-            let Proc { params, expr } = eval(*proc.clone(), env)? else {
+            let Proc(proc) = eval(*proc.clone(), env)? else {
                 return Err(format!("{:?} is not procedure", proc));
             };
-            let args = args.into_iter().map(|arg| eval(arg, env)).collect::<Vec<_>>();
+            let args = args.into_iter().map(|arg| eval(arg, env)).collect::<Result<_, _>>()?;
 
-            env.push_frame();
-            for (param, arg) in params.into_iter().zip(args.into_iter()) {
-                env.add(param, arg?);
+            match proc {
+                Proc::Opr(opr) => eval_opr(opr, args)?,
+                Proc::Lambda { params, expr } => {
+                    env.push_frame();
+                    for (param, arg) in params.into_iter().zip(args.into_iter()) {
+                        env.add(param, arg);
+                    }
+                    let value = eval(expr, env)?;
+                    env.pop_frame();
+                    value
+                },
             }
-            let value = eval(expr, env)?;
-            env.pop_frame();
-            value
         },
         Lambda { params, expr } => {
-            Proc { params, expr: *expr }
+            Proc(Proc::Lambda { params, expr: *expr })
         },
         Let { binds, expr } => {
             let binds = binds.into_iter().map(|(ident, expr)| (ident, eval(expr, env))).collect::<Vec<_>>();
@@ -132,10 +158,18 @@ pub fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
             env.set(ident, value)?
         },
         Var(ident) => env.find(&ident)?,
+        Expr::Opr(opr) => Proc(Proc::Opr(opr)),
         Expr::Num(val) => Value::Num(val),
         Expr::Bool(val) => Value::Bool(val),
         Expr::Str(val) => Value::Str(val),
         Expr::Nil => Value::Nil,
     };
     Ok(res)
+}
+
+fn eval_opr(opr: OprKind, args: Vec<Value>) -> Result<Value, String> {
+    match opr {
+        Add => args.into_iter().fold(Ok(Value::Num(0)), |sum, val| sum.and_then(|sum| sum + val)),
+        _ => panic!(),
+    }
 }

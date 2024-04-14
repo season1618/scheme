@@ -2,6 +2,7 @@ use crate::lexer::Token;
 
 use Token::*;
 use Expr::*;
+use OprKind::*;
 
 #[derive(Debug, Clone)]
 pub enum Expr {
@@ -12,10 +13,19 @@ pub enum Expr {
     LetRec { binds: Vec<(String, Expr)>, expr: Box<Expr> },
     Set { ident: String, expr: Box<Expr> },
     Var(String),
+    Opr(OprKind),
     Num(u32),
     Bool(bool),
     Str(String),
     Nil,
+}
+
+#[derive(Debug, Clone)]
+pub enum OprKind {
+    Add,
+    Sub,
+    Mul,
+    Div,
 }
 
 pub fn parse(tokens: Vec<Token>) -> Result<Vec<Expr>, String> {
@@ -107,6 +117,15 @@ impl Parser {
                         Apply { proc: Box::new(proc), args }
                     },
                 }
+            },
+            Keyword(keyword) => {
+                Opr(match &keyword as &str {
+                    "+" => Add,
+                    "-" => Sub,
+                    "*" => Mul,
+                    "/" => Div,
+                    _ => return Err(format!("{:?} is not an operator", keyword)),
+                })
             },
             Ident(ident) => Var(ident),
             Token::Num(val) => Expr::Num(val),
