@@ -7,11 +7,11 @@ use std::cell::RefCell;
 use Value::*;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Token {
+pub enum Token<'a> {
     OpenParen,
     CloseParen,
-    Keyword(String),
-    Ident(String),
+    Keyword(&'a str),
+    Ident(&'a str),
     Num(f32),
     Bool(bool),
     Str(String),

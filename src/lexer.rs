@@ -17,7 +17,7 @@ impl<'a> Lexer<'a> {
         Lexer { chs: code }
     }
 
-    fn tokenize(&mut self) -> Result<Vec<Token>, String> {
+    fn tokenize(&mut self) -> Result<Vec<Token<'a>>, String> {
         let mut tokens = Vec::new();
         while let Some(c) = self.peek_char() {
             if c.is_whitespace() {
@@ -66,25 +66,25 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
-    fn read_keyword_ident(&mut self) -> Result<Token, String> {
-        let mut s = String::new();
-        while let Some(c) = self.peek_char() {
-            if is_ident_char(c) {
-                self.next_char();
-                s.push(c);
-            } else {
-                break;
+    fn read_keyword_ident(&mut self) -> Result<Token<'a>, String> {
+        let mut chs = self.chs.char_indices();
+        let prefix;
+        (prefix, self.chs) = loop {
+            match chs.next() {
+                Some((_, c)) if is_ident_char(c) => continue,
+                Some((i, _)) => break (&self.chs[..i], &self.chs[i..]),
+                None => break (self.chs, &self.chs[self.chs.len()..]),
             }
-        }
+        };
 
-        Ok(if ["define", "lambda", "let", "let*", "letrec", "set!", "=", "<=", "<", ">=", ">", "+", "-", "*", "/"].iter().any(|&keyword| keyword == s) {
-            Keyword(s)
+        Ok(if ["define", "lambda", "let", "let*", "letrec", "set!", "=", "<=", "<", ">=", ">", "+", "-", "*", "/"].iter().any(|&keyword| keyword == prefix) {
+            Keyword(prefix)
         } else {
-            Ident(s)
+            Ident(prefix)
         })
     }
 
-    fn read_string(&mut self) -> Result<Token, String> {
+    fn read_string(&mut self) -> Result<Token<'a>, String> {
         self.next_char();
 
         let mut s = String::new();
@@ -98,7 +98,7 @@ impl<'a> Lexer<'a> {
         Err(String::from("expect '\"'"))
     }
 
-    fn read_num(&mut self) -> Token {
+    fn read_num(&mut self) -> Token<'a> {
         let mut val = 0;
         while let Some(c) = self.peek_char() {
             if let Some(d) = c.to_digit(10) {

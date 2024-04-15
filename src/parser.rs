@@ -4,18 +4,18 @@ use Token::*;
 use Expr::*;
 use OprKind::*;
 
-pub fn parse(tokens: Vec<Token>) -> Result<Vec<TopLevel>, String> {
+pub fn parse<'a>(tokens: Vec<Token<'a>>) -> Result<Vec<TopLevel>, String> {
     let mut parser = Parser::new(tokens);
     parser.parse()
 }
 
-struct Parser {
-    tokens: Vec<Token>,
+struct Parser<'a> {
+    tokens: Vec<Token<'a>>,
     idx: usize,
 }
 
-impl Parser {
-    fn new(tokens: Vec<Token>) -> Self {
+impl<'a> Parser<'a> {
+    fn new(tokens: Vec<Token<'a>>) -> Self {
         Parser {
             tokens,
             idx: 0,
@@ -41,7 +41,7 @@ impl Parser {
 
     fn parse_defn(&mut self) -> Result<Defn, String> {
         if self.next_if(OpenParen) {
-            if self.next_if(Keyword(String::from("define"))) {
+            if self.next_if(Keyword("define")) {
                 let ident = self.next_ident()?;
                 let expr = self.parse_expr()?;
                 self.next_force(CloseParen)?;
@@ -57,7 +57,7 @@ impl Parser {
         let expr = match self.next_token()? {
             OpenParen => {
                 match self.peek_token()? {
-                    Keyword(s) if s == "lambda" => {
+                    Keyword("lambda") => {
                         self.next_token()?;
 
                         let mut params = Vec::new();
@@ -90,13 +90,13 @@ impl Parser {
 
                         self.next_force(CloseParen)?;
 
-                        match &s as &str {
+                        match s {
                             "let" => Let { binds, expr: Box::new(expr) },
                             "let*" => LetStar { binds, expr: Box::new(expr) },
                             _ => LetRec { binds, expr: Box::new(expr) },
                         }
                     },
-                    Keyword(s) if s == "set!" => {
+                    Keyword("set!") => {
                         self.next_token()?;
 
                         let ident = self.next_ident()?;
@@ -131,7 +131,7 @@ impl Parser {
                     _ => return Err(format!("{:?} is not an operator", keyword)),
                 })
             },
-            Ident(ident) => Var(ident),
+            Ident(ident) => Var(ident.to_string()),
             Token::Num(val) => Expr::Num(val),
             Token::Bool(val) => Expr::Bool(val),
             Token::Str(val) => Expr::Str(val),
@@ -140,7 +140,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn next_if(&mut self, expected: Token) -> bool {
+    fn next_if(&mut self, expected: Token<'a>) -> bool {
         if self.idx < self.tokens.len() {
             if self.tokens[self.idx] == expected {
                 self.idx += 1;
@@ -153,7 +153,7 @@ impl Parser {
         }
     }
 
-    fn next_force(&mut self, expected: Token) -> Result<(), String> {
+    fn next_force(&mut self, expected: Token<'a>) -> Result<(), String> {
         let actual = self.next_token()?;
         if expected == actual {
             Ok(())
@@ -165,13 +165,13 @@ impl Parser {
     fn next_ident(&mut self) -> Result<String, String> {
         if let Ident(ident) = self.peek_token()? {
             self.idx += 1;
-            Ok(ident)
+            Ok(ident.to_string())
         } else {
             Err(String::from("expect identifier"))
         }
     }
 
-    fn peek_token(&self) -> Result<Token, String> {
+    fn peek_token(&self) -> Result<Token<'a>, String> {
         if self.idx < self.tokens.len() {
             let token = self.tokens[self.idx].clone();
             Ok(token)
@@ -180,7 +180,7 @@ impl Parser {
         }
     }
 
-    fn next_token(&mut self) -> Result<Token, String> {
+    fn next_token(&mut self) -> Result<Token<'a>, String> {
         if self.idx < self.tokens.len() {
             let token = self.tokens[self.idx].clone();
             self.idx += 1;
