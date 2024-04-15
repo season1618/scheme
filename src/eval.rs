@@ -101,6 +101,26 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
                 return Err(format!("{:?} is not condition", *cond));
             }
         },
+        And { args } => {
+            for arg in args {
+                match eval(arg, env)? {
+                    Value::Bool(true) => {},
+                    Value::Bool(false) => return Ok(Value::Bool(false)),
+                    _ => return Err(String::from("not boolean")),
+                }
+            }
+            Value::Bool(true)
+        },
+        Or { args } => {
+            for arg in args {
+                match eval(arg, env)? {
+                    Value::Bool(true) => return Ok(Value::Bool(true)),
+                    Value::Bool(false) => {},
+                    _ => return Err(String::from("not boolean")),
+                }
+            }
+            Value::Bool(false)
+        },
         Expr::Opr(opr) => Proc(Proc::Opr(opr)),
         Expr::Num(val) => Value::Num(val),
         Expr::Bool(val) => Value::Bool(val),

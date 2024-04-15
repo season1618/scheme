@@ -115,6 +115,26 @@ impl<'a> Parser<'a> {
 
                         If { cond: Box::new(cond), expr1: Box::new(expr1), expr2: Box::new(expr2) }
                     },
+                    Keyword("and") => {
+                        self.next_token()?;
+
+                        let mut args = Vec::new();
+                        while !self.next_if(CloseParen) {
+                            args.push(self.parse_expr()?);
+                        }
+
+                        And { args }
+                    },
+                    Keyword("or") => {
+                        self.next_token()?;
+
+                        let mut args = Vec::new();
+                        while !self.next_if(CloseParen) {
+                            args.push(self.parse_expr()?);
+                        }
+
+                        Or { args }
+                    },
                     CloseParen => Expr::Nil,
                     _ => {
                         let proc = self.parse_expr()?;
