@@ -38,6 +38,7 @@ pub enum Expr {
     LetRec { binds: Vec<(String, Expr)>, expr: Box<Expr> },
     Set { ident: String, expr: Box<Expr> },
     Var(String),
+    If { cond: Box<Expr>, expr1: Box<Expr>, expr2: Box<Expr> },
     Opr(OprKind),
     Num(f32),
     Bool(bool),

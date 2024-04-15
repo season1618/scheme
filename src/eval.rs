@@ -94,6 +94,13 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
             env.set(ident, value)?
         },
         Var(ident) => env.find(&ident)?,
+        If { cond, expr1, expr2 } => {
+            if let Value::Bool(cond) = eval(*cond.clone(), env)? {
+                if cond { eval(*expr1, env)? } else { eval(*expr2, env)? }
+            } else {
+                return Err(format!("{:?} is not condition", *cond));
+            }
+        },
         Expr::Opr(opr) => Proc(Proc::Opr(opr)),
         Expr::Num(val) => Value::Num(val),
         Expr::Bool(val) => Value::Bool(val),

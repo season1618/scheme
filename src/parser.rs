@@ -105,6 +105,16 @@ impl<'a> Parser<'a> {
 
                         Set { ident, expr: Box::new(expr) }
                     },
+                    Keyword("if") => {
+                        self.next_token()?;
+
+                        let cond = self.parse_expr()?;
+                        let expr1 = self.parse_expr()?;
+                        let expr2 = self.parse_expr()?;
+                        self.next_force(CloseParen)?;
+
+                        If { cond: Box::new(cond), expr1: Box::new(expr1), expr2: Box::new(expr2) }
+                    },
                     CloseParen => Expr::Nil,
                     _ => {
                         let proc = self.parse_expr()?;
