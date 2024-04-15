@@ -6,10 +6,9 @@ mod eval;
 use std::env;
 use std::fs;
 
-use crate::data::Env;
 use crate::lexer::tokenize;
 use crate::parser::parse;
-use crate::eval::eval;
+use crate::eval::run;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -28,11 +27,5 @@ fn main() {
             return;
         }
     };
-    let mut env = Env::new();
-    for node in nodes {
-        match eval(node, &mut env) {
-            Ok(val) => println!("{}", val),
-            Err(err) => { eprintln!("{}", err); return; },
-        }
-    }
+    run(nodes);
 }

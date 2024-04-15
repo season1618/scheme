@@ -17,6 +17,18 @@ pub enum Token {
     Str(String),
 }
 
+#[derive(Debug)]
+pub enum TopLevel {
+    Defn(Defn),
+    Expr(Expr),
+}
+
+#[derive(Debug)]
+pub struct Defn {
+    pub ident: String,
+    pub expr: Expr,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Apply { proc: Box<Expr>, args: Vec<Expr> },

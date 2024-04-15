@@ -1,10 +1,37 @@
-use crate::data::{Expr, OprKind, Value, Proc, Env};
+use crate::data::{TopLevel, Defn, Expr, OprKind, Value, Proc, Env};
 
 use Expr::*;
 use OprKind::*;
 use Value::*;
 
-pub fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
+pub fn run(nodes: Vec<TopLevel>) {
+    let mut env = Env::new();
+    for node in nodes {
+        match node {
+            TopLevel::Defn(defn) => {
+                match bind(defn, &mut env) {
+                    Ok(()) => {},
+                    Err(err) => { eprintln!("{}", err); return; },
+                }
+            },
+            TopLevel::Expr(expr) => {
+                match eval(expr, &mut env) {
+                    Ok(val) => println!("{}", val),
+                    Err(err) => { eprintln!("{}", err); return; },
+                }
+            },
+        }
+    }
+}
+
+fn bind(defn: Defn, env: &mut Env) -> Result<(), String> {
+    let Defn { ident, expr } = defn;
+    let value = eval(expr, env)?;
+    env.add(ident, value);
+    Ok(())
+}
+
+fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
     let res = match expr {
         Apply { proc, args } => {
             let Proc(proc) = eval(*proc.clone(), env)? else {

@@ -1,10 +1,10 @@
-use crate::data::{Token, Expr, OprKind};
+use crate::data::{Token, TopLevel, Defn, Expr, OprKind};
 
 use Token::*;
 use Expr::*;
 use OprKind::*;
 
-pub fn parse(tokens: Vec<Token>) -> Result<Vec<Expr>, String> {
+pub fn parse(tokens: Vec<Token>) -> Result<Vec<TopLevel>, String> {
     let mut parser = Parser::new(tokens);
     parser.parse()
 }
@@ -22,12 +22,35 @@ impl Parser {
         }
     }
 
-    fn parse(&mut self) -> Result<Vec<Expr>, String> {
+    fn parse(&mut self) -> Result<Vec<TopLevel>, String> {
         let mut vec = Vec::new();
         while self.idx < self.tokens.len() {
-            vec.push(self.parse_expr()?);
+            vec.push(self.parse_toplevel()?);
         }
         Ok(vec)
+    }
+
+    fn parse_toplevel(&mut self) -> Result<TopLevel, String> {
+        Ok(if let Ok(defn) = self.parse_defn() {
+            TopLevel::Defn(defn)
+        } else {
+            let expr = self.parse_expr()?;
+            TopLevel::Expr(expr)
+        })
+    }
+
+    fn parse_defn(&mut self) -> Result<Defn, String> {
+        if self.next_if(OpenParen) {
+            if self.next_if(Keyword(String::from("define"))) {
+                let ident = self.next_ident()?;
+                let expr = self.parse_expr()?;
+                self.next_force(CloseParen)?;
+
+                return Ok(Defn { ident, expr });
+            }
+            self.idx -= 1;
+        }
+        Err(String::from(""))
     }
 
     fn parse_expr(&mut self) -> Result<Expr, String> {

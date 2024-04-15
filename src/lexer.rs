@@ -77,7 +77,7 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        Ok(if ["lambda", "let", "let*", "letrec", "set!", "=", "<=", "<", ">=", ">", "+", "-", "*", "/"].iter().any(|&keyword| keyword == s) {
+        Ok(if ["define", "lambda", "let", "let*", "letrec", "set!", "=", "<=", "<", ">=", ">", "+", "-", "*", "/"].iter().any(|&keyword| keyword == s) {
             Keyword(s)
         } else {
             Ident(s)
