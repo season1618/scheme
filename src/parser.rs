@@ -56,7 +56,7 @@ impl<'a> Parser<'a> {
     fn parse_expr(&mut self) -> Result<Expr, String> {
         let expr = match self.next_token()? {
             OpenParen => {
-                match self.peek_token()? {
+                let expr = match self.peek_token()? {
                     Keyword("lambda") => {
                         self.next_token()?;
 
@@ -68,8 +68,6 @@ impl<'a> Parser<'a> {
                         self.next_force(CloseParen)?;
 
                         let expr = self.parse_expr()?;
-
-                        self.next_force(CloseParen)?;
 
                         Lambda { params, expr: Box::new(expr) }
                     },
@@ -88,8 +86,6 @@ impl<'a> Parser<'a> {
 
                         let expr = self.parse_expr()?;
 
-                        self.next_force(CloseParen)?;
-
                         match s {
                             "let" => Let { binds, expr: Box::new(expr) },
                             "let*" => LetStar { binds, expr: Box::new(expr) },
@@ -101,7 +97,6 @@ impl<'a> Parser<'a> {
 
                         let ident = self.next_ident()?;
                         let expr = self.parse_expr()?;
-                        self.next_force(CloseParen)?;
 
                         Set { ident, expr: Box::new(expr) }
                     },
@@ -111,7 +106,6 @@ impl<'a> Parser<'a> {
                         let cond = self.parse_expr()?;
                         let expr1 = self.parse_expr()?;
                         let expr2 = self.parse_expr()?;
-                        self.next_force(CloseParen)?;
 
                         If { cond: Box::new(cond), expr1: Box::new(expr1), expr2: Box::new(expr2) }
                     },
@@ -119,7 +113,7 @@ impl<'a> Parser<'a> {
                         self.next_token()?;
 
                         let mut args = Vec::new();
-                        while !self.next_if(CloseParen) {
+                        while !self.peek_if(CloseParen) {
                             args.push(self.parse_expr()?);
                         }
 
@@ -129,7 +123,7 @@ impl<'a> Parser<'a> {
                         self.next_token()?;
 
                         let mut args = Vec::new();
-                        while !self.next_if(CloseParen) {
+                        while !self.peek_if(CloseParen) {
                             args.push(self.parse_expr()?);
                         }
 
@@ -139,13 +133,15 @@ impl<'a> Parser<'a> {
                     _ => {
                         let proc = self.parse_expr()?;
                         let mut args = Vec::new();
-                        while !self.next_if(CloseParen) {
+                        while !self.peek_if(CloseParen) {
                             args.push(self.parse_expr()?);
                         }
 
                         Apply { proc: Box::new(proc), args }
                     },
-                }
+                };
+                self.next_force(CloseParen)?;
+                expr
             },
             Keyword(keyword) => {
                 Opr(match &keyword as &str {
@@ -168,6 +164,10 @@ impl<'a> Parser<'a> {
             token => return Err(format!("unexpected token {:?}", token)),
         };
         Ok(expr)
+    }
+
+    fn peek_if(&self, expected: Token<'a>) -> bool {
+        self.idx < self.tokens.len() && self.tokens[self.idx] == expected
     }
 
     fn next_if(&mut self, expected: Token<'a>) -> bool {
