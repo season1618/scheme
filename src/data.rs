@@ -89,14 +89,14 @@ impl fmt::Display for Value {
             Proc(Proc::Lambda { env, params, expr }) => {
                 write!(f, "env\n")?;
                 write!(f, "{}", env)?;
-                write!(f, "{:?} -> {:?}: procedure", params, expr)
+                write!(f, "{:?} -> {:?}", params, expr)
             },
-            Proc(Proc::Opr(opr)) => write!(f, "{:?}: procedure", opr),
-            Symbol(symbol) => write!(f, "{}: symbol", symbol),
-            Value::Num(val) => write!(f, "{}: number", val),
-            Value::Bool(val) => write!(f, "{}: bool", if *val { "#t" } else { "#f" }),
-            Value::Str(val) => write!(f, "{}: string", val),
-            Value::Nil => write!(f, "()"),
+            Proc(Proc::Opr(opr)) => write!(f, "{:?}", opr),
+            Symbol(symbol) => symbol.fmt(f),
+            Value::Num(val) => val.fmt(f),
+            Value::Bool(val) => if *val { "#t" } else { "#f" }.fmt(f),
+            Value::Str(val) => write!(f, "\"{}\"", val),
+            Value::Nil => "()".fmt(f),
         }
     }
 }
@@ -171,7 +171,8 @@ impl fmt::Display for Env {
         }
         let frame = &self.0.borrow().0;
         for (ident, value) in frame {
-            write!(f, "{}: {:?}, ", &ident, value)?;
+            let disp = if let Proc(_) = value { Symbol(String::from("procedure")) } else { value.clone() };
+            write!(f, "{}: {}, ", ident, disp)?;
         }
         write!(f, "\n")
     }
