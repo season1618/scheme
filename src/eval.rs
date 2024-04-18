@@ -32,39 +32,14 @@ fn bind(defn: Defn, env: &mut Env) -> Result<(), String> {
 }
 
 fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
-    let res = match expr {
-        Apply { proc, args } => {
-            let Proc(proc) = eval(*proc.clone(), env)? else {
-                return Err(format!("{:?} is not procedure", proc));
-            };
-            let args = args.into_iter().map(|arg| eval(arg, env)).collect::<Result<_, _>>()?;
-
-            match proc {
-                Proc::Opr(opr) => eval_opr(opr, args)?,
-                Proc::Lambda { env, params, expr } => {
-                    let env = &mut env.push_frame();
-                    for (param, arg) in params.into_iter().zip(args.into_iter()) {
-                        env.add(param, arg);
-                    }
-                    let value = eval(expr, env)?;
-
-                    value
-                },
-            }
-        },
-        Lambda { params, expr } => {
-            Proc(Proc::Lambda { env: env.push_frame(), params, expr: *expr })
-        },
+    match expr {
         Let { binds, expr } => {
             let binds = binds.into_iter().map(|(ident, expr)| (ident, eval(expr, env))).collect::<Vec<_>>();
-
             let env = &mut env.push_frame();
             for (ident, value) in binds {
                 env.add(ident, value?);
             }
-            let value = eval(*expr, env)?;
-
-            value
+            eval(*expr, env)
         },
         LetStar { binds, expr } => {
             let env = &mut env.push_frame();
@@ -72,9 +47,7 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
                 let value = eval(expr, env)?;
                 env.add(ident, value);
             }
-            let value = eval(*expr, env)?;
-
-            value
+            eval(*expr, env)
         },
         LetRec { binds, expr } => {
             let env = &mut env.push_frame();
@@ -85,21 +58,19 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
                 let value = eval(expr, env)?;
                 env.set(ident, value);
             }
-            let value = eval(*expr, env)?;
-
-            value
+            eval(*expr, env)
         },
         Set { ident, expr } => {
             let value = eval(*expr, env)?;
-            env.set(ident, value)?
+            env.set(ident, value)
         },
-        Var(ident) => env.find(&ident)?,
-        Quote(s_expr) => *s_expr,
+        Var(ident) => env.find(&ident),
+        Quote(s_expr) => Ok(*s_expr),
         If { cond, expr1, expr2 } => {
             if let Value::Bool(cond) = eval(*cond.clone(), env)? {
-                if cond { eval(*expr1, env)? } else { eval(*expr2, env)? }
+                if cond { eval(*expr1, env) } else { eval(*expr2, env) }
             } else {
-                return Err(format!("{:?} is not condition", *cond));
+                Err(format!("{:?} is not condition", *cond))
             }
         },
         And { args } => {
@@ -110,7 +81,7 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
                     _ => return Err(String::from("not boolean")),
                 }
             }
-            Value::Bool(true)
+            Ok(Value::Bool(true))
         },
         Or { args } => {
             for arg in args {
@@ -120,15 +91,32 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
                     _ => return Err(String::from("not boolean")),
                 }
             }
-            Value::Bool(false)
+            Ok(Value::Bool(false))
         },
-        Expr::Opr(opr) => Proc(Proc::Opr(opr)),
-        Expr::Num(val) => Value::Num(val),
-        Expr::Bool(val) => Value::Bool(val),
-        Expr::Str(val) => Value::Str(val),
-        Expr::Nil => Value::Nil,
-    };
-    Ok(res)
+        Apply { proc, args } => {
+            let Proc(proc) = eval(*proc.clone(), env)? else {
+                return Err(format!("{:?} is not procedure", proc));
+            };
+            let args = args.into_iter().map(|arg| eval(arg, env)).collect::<Result<_, _>>()?;
+
+            match proc {
+                Proc::Opr(opr) => eval_opr(opr, args),
+                Proc::Lambda { env, params, expr } => {
+                    let env = &mut env.push_frame();
+                    for (param, arg) in params.into_iter().zip(args.into_iter()) {
+                        env.add(param, arg);
+                    }
+                    eval(expr, env)
+                },
+            }
+        },
+        Lambda { params, expr } => Ok(Proc(Proc::Lambda { env: env.push_frame(), params, expr: *expr })),
+        Expr::Opr(opr) => Ok(Proc(Proc::Opr(opr))),
+        Expr::Num(val) => Ok(Value::Num(val)),
+        Expr::Bool(val) => Ok(Value::Bool(val)),
+        Expr::Str(val) => Ok(Value::Str(val)),
+        Expr::Nil => Ok(Value::Nil),
+    }
 }
 
 fn eval_opr(opr: OprKind, args: Vec<Value>) -> Result<Value, String> {
