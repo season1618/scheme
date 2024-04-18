@@ -86,84 +86,83 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_apply(&mut self) -> Result<Expr, String> {
-        match self.next_token()? {
-            Keyword("lambda") => {
-                let mut params = Vec::new();
-                self.next_force(OpenParen)?;
-                while let Ok(ident) = self.next_ident() {
-                    params.push(ident);
-                }
-                self.next_force(CloseParen)?;
+        if let Ok(keyword) = self.next_keyword() {
+            match keyword {
+                "lambda" => {
+                    let mut params = Vec::new();
+                    self.next_force(OpenParen)?;
+                    while let Ok(ident) = self.next_ident() {
+                        params.push(ident);
+                    }
+                    self.next_force(CloseParen)?;
 
-                let expr = self.parse_expr()?;
+                    let expr = self.parse_expr()?;
 
-                Ok(Lambda { params, expr: Box::new(expr) })
-            },
-            Keyword(s) if s == "let" || s == "let*" || s == "letrec" => {
-                let mut binds = Vec::new();
-                self.next_force(OpenParen)?;
-                while self.next_if(OpenParen) {
+                    Ok(Lambda { params, expr: Box::new(expr) })
+                },
+                s if s == "let" || s == "let*" || s == "letrec" => {
+                    let mut binds = Vec::new();
+                    self.next_force(OpenParen)?;
+                    while self.next_if(OpenParen) {
+                        let ident = self.next_ident()?;
+                        let expr = self.parse_expr()?;
+                        binds.push((ident, expr));
+                        self.next_force(CloseParen)?;
+                    }
+                    self.next_force(CloseParen)?;
+
+                    let expr = self.parse_expr()?;
+
+                    Ok(match s {
+                        "let" => Let { binds, expr: Box::new(expr) },
+                        "let*" => LetStar { binds, expr: Box::new(expr) },
+                        _ => LetRec { binds, expr: Box::new(expr) },
+                    })
+                },
+                "set!" => {
                     let ident = self.next_ident()?;
                     let expr = self.parse_expr()?;
-                    binds.push((ident, expr));
-                    self.next_force(CloseParen)?;
-                }
-                self.next_force(CloseParen)?;
 
-                let expr = self.parse_expr()?;
+                    Ok(Set { ident, expr: Box::new(expr) })
+                },
+                "quote" => {
+                    Ok(Quote(Box::new(self.parse_s_expr()?)))
+                },
+                "if" => {
+                    let cond = self.parse_expr()?;
+                    let expr1 = self.parse_expr()?;
+                    let expr2 = self.parse_expr()?;
 
-                Ok(match s {
-                    "let" => Let { binds, expr: Box::new(expr) },
-                    "let*" => LetStar { binds, expr: Box::new(expr) },
-                    _ => LetRec { binds, expr: Box::new(expr) },
-                })
-            },
-            Keyword("set!") => {
-                let ident = self.next_ident()?;
-                let expr = self.parse_expr()?;
+                    Ok(If { cond: Box::new(cond), expr1: Box::new(expr1), expr2: Box::new(expr2) })
+                },
+                "and" => {
+                    let mut args = Vec::new();
+                    while !self.peek_if(CloseParen) {
+                        args.push(self.parse_expr()?);
+                    }
 
-                Ok(Set { ident, expr: Box::new(expr) })
-            },
-            Keyword("quote") => {
-                Ok(Quote(Box::new(self.parse_s_expr()?)))
-            },
-            Keyword("if") => {
-                let cond = self.parse_expr()?;
-                let expr1 = self.parse_expr()?;
-                let expr2 = self.parse_expr()?;
+                    Ok(And { args })
+                },
+                "or" => {
+                    let mut args = Vec::new();
+                    while !self.peek_if(CloseParen) {
+                        args.push(self.parse_expr()?);
+                    }
 
-                Ok(If { cond: Box::new(cond), expr1: Box::new(expr1), expr2: Box::new(expr2) })
-            },
-            Keyword("and") => {
-                let mut args = Vec::new();
-                while !self.peek_if(CloseParen) {
-                    args.push(self.parse_expr()?);
-                }
+                    Ok(Or { args })
+                },
+                _ => Err(format!("{} is unavailable", keyword)),
+            }
+        } else if self.peek_if(CloseParen) {
+            Ok(Expr::Nil)
+        } else {
+            let proc = self.parse_expr()?;
+            let mut args = Vec::new();
+            while !self.peek_if(CloseParen) {
+                args.push(self.parse_expr()?);
+            }
 
-                Ok(And { args })
-            },
-            Keyword("or") => {
-                let mut args = Vec::new();
-                while !self.peek_if(CloseParen) {
-                    args.push(self.parse_expr()?);
-                }
-
-                Ok(Or { args })
-            },
-            CloseParen => {
-                self.idx -= 1;
-                Ok(Expr::Nil)
-            },
-            _ => {
-                self.idx -= 1;
-                let proc = self.parse_expr()?;
-                let mut args = Vec::new();
-                while !self.peek_if(CloseParen) {
-                    args.push(self.parse_expr()?);
-                }
-
-                Ok(Apply { proc: Box::new(proc), args })
-            },
+            Ok(Apply { proc: Box::new(proc), args })
         }
     }
 
@@ -211,6 +210,15 @@ impl<'a> Parser<'a> {
             Ok(())
         } else {
             Err(format!("expect {:?}, actual {:?}",  expected, actual))
+        }
+    }
+
+    fn next_keyword(&mut self) -> Result<&'a str, String> {
+        if let Keyword(keyword) = self.peek_token()? {
+            self.idx += 1;
+            Ok(keyword)
+        } else {
+            Err(String::from("expect keyword"))
         }
     }
 
