@@ -167,7 +167,7 @@ impl fmt::Display for Env {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let parent = &self.0.borrow().1;
         if let Some(parent) = parent {
-            parent.fmt(f);
+            parent.fmt(f)?;
         }
         let frame = &self.0.borrow().0;
         for (ident, value) in frame {

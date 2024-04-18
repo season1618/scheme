@@ -56,7 +56,7 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
             }
             for (ident, expr) in binds {
                 let value = eval(expr, env)?;
-                env.set(ident, value);
+                env.set(ident, value)?;
             }
             eval(*expr, env)
         },
