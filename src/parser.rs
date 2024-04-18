@@ -128,6 +128,13 @@ impl<'a> Parser<'a> {
                 "quote" => {
                     Ok(Quote(Box::new(self.parse_s_expr()?)))
                 },
+                "begin" => {
+                    let mut exprs = Vec::new();
+                    while !self.peek_if(CloseParen) {
+                        exprs.push(self.parse_expr()?);
+                    }
+                    Ok(Begin(exprs))
+                },
                 "if" => {
                     let cond = self.parse_expr()?;
                     let expr1 = self.parse_expr()?;

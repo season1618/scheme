@@ -41,6 +41,7 @@ pub enum Expr {
     Set { ident: String, expr: Box<Expr> },
     Var(String),
     Quote(Box<Value>),
+    Begin(Vec<Expr>),
     If { cond: Box<Expr>, expr1: Box<Expr>, expr2: Box<Expr> },
     And { args: Vec<Expr> },
     Or { args: Vec<Expr> },
