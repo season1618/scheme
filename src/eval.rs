@@ -132,6 +132,13 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
 
 fn eval_opr(opr: OprKind, args: Vec<Value>) -> Result<Value, String> {
     match opr {
+        Cons => {
+            if args.len() == 2 {
+                Ok(Pair { car: Box::new(args[0].clone()), cdr: Box::new(args[1].clone()) })
+            } else {
+                Err(String::from("the number of arguments is not 2"))
+            }
+        },
         Eq => Ok(Value::Bool(args.windows(2).all(|p| p[0] == p[1]))),
         Lt => Ok(Value::Bool(args.windows(2).all(|p| p[0] <  p[1]))),
         Le => Ok(Value::Bool(args.windows(2).all(|p| p[0] <= p[1]))),

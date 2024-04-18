@@ -50,6 +50,7 @@ pub enum Expr {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum OprKind {
+    Cons,
     Eq,
     Lt,
     Le,
@@ -63,6 +64,7 @@ pub enum OprKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
+    Pair { car: Box<Value>, cdr: Box<Value> },
     Proc(Proc),
     Num(f32),
     Bool(bool),
@@ -79,6 +81,7 @@ pub enum Proc {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Pair { car, cdr } => write!(f, "({} . {})", *car, *cdr),
             Proc(Proc::Lambda { env, params, expr }) => {
                 write!(f, "env\n")?;
                 write!(f, "{}", env)?;

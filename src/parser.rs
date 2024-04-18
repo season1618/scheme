@@ -145,6 +145,7 @@ impl<'a> Parser<'a> {
             },
             Keyword(keyword) => {
                 Opr(match &keyword as &str {
+                    "cons" => Cons,
                     "=" => Eq,
                     "<" => Lt,
                     "<=" => Le,
