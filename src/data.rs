@@ -12,6 +12,7 @@ pub enum Token<'a> {
     CloseParen,
     SingleQuote,
     Keyword(&'a str),
+    Operator(&'a str),
     Ident(&'a str),
     Num(f32),
     Bool(bool),

@@ -62,19 +62,19 @@ impl<'a> Parser<'a> {
                 Ok(expr)
             },
             SingleQuote => Ok(Quote(Box::new(self.parse_s_expr()?))),
-            Keyword(keyword) => {
-                match keyword {
-                    "cons" => Ok(Opr(Cons)),
-                    "="  => Ok(Opr(Eq)),
-                    "<"  => Ok(Opr(Lt)),
-                    "<=" => Ok(Opr(Le)),
-                    ">"  => Ok(Opr(Gt)),
-                    ">=" => Ok(Opr(Ge)),
-                    "+"  => Ok(Opr(Add)),
-                    "-"  => Ok(Opr(Sub)),
-                    "*"  => Ok(Opr(Mul)),
-                    "/"  => Ok(Opr(Div)),
-                    _ => Err(format!("{:?} is not an operator", keyword)),
+            Operator(operator) => {
+                match operator {
+                    "cons" => Ok(Expr::Opr(Cons)),
+                    "="  => Ok(Expr::Opr(Eq)),
+                    "<"  => Ok(Expr::Opr(Lt)),
+                    "<=" => Ok(Expr::Opr(Le)),
+                    ">"  => Ok(Expr::Opr(Gt)),
+                    ">=" => Ok(Expr::Opr(Ge)),
+                    "+"  => Ok(Expr::Opr(Add)),
+                    "-"  => Ok(Expr::Opr(Sub)),
+                    "*"  => Ok(Expr::Opr(Mul)),
+                    "/"  => Ok(Expr::Opr(Div)),
+                    _ => panic!(),
                 }
             },
             Token::Ident(ident) => Ok(Var(ident.to_string())),
@@ -171,6 +171,7 @@ impl<'a> Parser<'a> {
         match self.next_token()? {
             OpenParen => Ok(self.parse_list()?),
             Keyword(keyword) => Ok(Symbol(keyword.to_string())),
+            Operator(operator) => Ok(Symbol(operator.to_string())),
             Token::Ident(ident) => Ok(Symbol(ident.to_string())),
             Token::Num(val) => Ok(Value::Num(val)),
             Token::Bool(val) => Ok(Value::Bool(val)),
