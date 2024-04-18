@@ -55,123 +55,116 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expr(&mut self) -> Result<Expr, String> {
-        let expr = match self.next_token()? {
+        match self.next_token()? {
             OpenParen => {
-                let expr = match self.peek_token()? {
-                    Keyword("lambda") => {
-                        self.next_token()?;
-
-                        let mut params = Vec::new();
-                        self.next_force(OpenParen)?;
-                        while let Ok(ident) = self.next_ident() {
-                            params.push(ident);
-                        }
-                        self.next_force(CloseParen)?;
-
-                        let expr = self.parse_expr()?;
-
-                        Lambda { params, expr: Box::new(expr) }
-                    },
-                    Keyword(s) if s == "let" || s == "let*" || s == "letrec" => {
-                        self.next_token()?;
-
-                        let mut binds = Vec::new();
-                        self.next_force(OpenParen)?;
-                        while self.next_if(OpenParen) {
-                            let ident = self.next_ident()?;
-                            let expr = self.parse_expr()?;
-                            binds.push((ident, expr));
-                            self.next_force(CloseParen)?;
-                        }
-                        self.next_force(CloseParen)?;
-
-                        let expr = self.parse_expr()?;
-
-                        match s {
-                            "let" => Let { binds, expr: Box::new(expr) },
-                            "let*" => LetStar { binds, expr: Box::new(expr) },
-                            _ => LetRec { binds, expr: Box::new(expr) },
-                        }
-                    },
-                    Keyword("set!") => {
-                        self.next_token()?;
-
-                        let ident = self.next_ident()?;
-                        let expr = self.parse_expr()?;
-
-                        Set { ident, expr: Box::new(expr) }
-                    },
-                    Keyword("quote") => {
-                        self.next_token()?;
-
-                        Quote(Box::new(self.parse_s_expr()?))
-                    },
-                    Keyword("if") => {
-                        self.next_token()?;
-
-                        let cond = self.parse_expr()?;
-                        let expr1 = self.parse_expr()?;
-                        let expr2 = self.parse_expr()?;
-
-                        If { cond: Box::new(cond), expr1: Box::new(expr1), expr2: Box::new(expr2) }
-                    },
-                    Keyword("and") => {
-                        self.next_token()?;
-
-                        let mut args = Vec::new();
-                        while !self.peek_if(CloseParen) {
-                            args.push(self.parse_expr()?);
-                        }
-
-                        And { args }
-                    },
-                    Keyword("or") => {
-                        self.next_token()?;
-
-                        let mut args = Vec::new();
-                        while !self.peek_if(CloseParen) {
-                            args.push(self.parse_expr()?);
-                        }
-
-                        Or { args }
-                    },
-                    CloseParen => Expr::Nil,
-                    _ => {
-                        let proc = self.parse_expr()?;
-                        let mut args = Vec::new();
-                        while !self.peek_if(CloseParen) {
-                            args.push(self.parse_expr()?);
-                        }
-
-                        Apply { proc: Box::new(proc), args }
-                    },
-                };
+                let expr = self.parse_apply()?;
                 self.next_force(CloseParen)?;
-                expr
+                Ok(expr)
             },
-            SingleQuote => Quote(Box::new(self.parse_s_expr()?)),
+            SingleQuote => Ok(Quote(Box::new(self.parse_s_expr()?))),
             Keyword(keyword) => {
-                Opr(match &keyword as &str {
-                    "cons" => Cons,
-                    "=" => Eq,
-                    "<" => Lt,
-                    "<=" => Le,
-                    ">" => Gt,
-                    ">=" => Ge,
-                    "+" => Add,
-                    "-" => Sub,
-                    "*" => Mul,
-                    "/" => Div,
-                    _ => return Err(format!("{:?} is not an operator", keyword)),
+                match keyword {
+                    "cons" => Ok(Opr(Cons)),
+                    "="  => Ok(Opr(Eq)),
+                    "<"  => Ok(Opr(Lt)),
+                    "<=" => Ok(Opr(Le)),
+                    ">"  => Ok(Opr(Gt)),
+                    ">=" => Ok(Opr(Ge)),
+                    "+"  => Ok(Opr(Add)),
+                    "-"  => Ok(Opr(Sub)),
+                    "*"  => Ok(Opr(Mul)),
+                    "/"  => Ok(Opr(Div)),
+                    _ => Err(format!("{:?} is not an operator", keyword)),
+                }
+            },
+            Token::Ident(ident) => Ok(Var(ident.to_string())),
+            Token::Num(val) => Ok(Expr::Num(val)),
+            Token::Bool(val) => Ok(Expr::Bool(val)),
+            Token::Str(val) => Ok(Expr::Str(val)),
+            token => Err(format!("unexpected token {:?}", token)),
+        }
+    }
+
+    fn parse_apply(&mut self) -> Result<Expr, String> {
+        match self.next_token()? {
+            Keyword("lambda") => {
+                let mut params = Vec::new();
+                self.next_force(OpenParen)?;
+                while let Ok(ident) = self.next_ident() {
+                    params.push(ident);
+                }
+                self.next_force(CloseParen)?;
+
+                let expr = self.parse_expr()?;
+
+                Ok(Lambda { params, expr: Box::new(expr) })
+            },
+            Keyword(s) if s == "let" || s == "let*" || s == "letrec" => {
+                let mut binds = Vec::new();
+                self.next_force(OpenParen)?;
+                while self.next_if(OpenParen) {
+                    let ident = self.next_ident()?;
+                    let expr = self.parse_expr()?;
+                    binds.push((ident, expr));
+                    self.next_force(CloseParen)?;
+                }
+                self.next_force(CloseParen)?;
+
+                let expr = self.parse_expr()?;
+
+                Ok(match s {
+                    "let" => Let { binds, expr: Box::new(expr) },
+                    "let*" => LetStar { binds, expr: Box::new(expr) },
+                    _ => LetRec { binds, expr: Box::new(expr) },
                 })
             },
-            Token::Ident(ident) => Var(ident.to_string()),
-            Token::Num(val) => Expr::Num(val),
-            Token::Bool(val) => Expr::Bool(val),
-            Token::Str(val) => Expr::Str(val),
-            token => return Err(format!("unexpected token {:?}", token)),
-        };
-        Ok(expr)
+            Keyword("set!") => {
+                let ident = self.next_ident()?;
+                let expr = self.parse_expr()?;
+
+                Ok(Set { ident, expr: Box::new(expr) })
+            },
+            Keyword("quote") => {
+                Ok(Quote(Box::new(self.parse_s_expr()?)))
+            },
+            Keyword("if") => {
+                let cond = self.parse_expr()?;
+                let expr1 = self.parse_expr()?;
+                let expr2 = self.parse_expr()?;
+
+                Ok(If { cond: Box::new(cond), expr1: Box::new(expr1), expr2: Box::new(expr2) })
+            },
+            Keyword("and") => {
+                let mut args = Vec::new();
+                while !self.peek_if(CloseParen) {
+                    args.push(self.parse_expr()?);
+                }
+
+                Ok(And { args })
+            },
+            Keyword("or") => {
+                let mut args = Vec::new();
+                while !self.peek_if(CloseParen) {
+                    args.push(self.parse_expr()?);
+                }
+
+                Ok(Or { args })
+            },
+            CloseParen => {
+                self.idx -= 1;
+                Ok(Expr::Nil)
+            },
+            _ => {
+                self.idx -= 1;
+                let proc = self.parse_expr()?;
+                let mut args = Vec::new();
+                while !self.peek_if(CloseParen) {
+                    args.push(self.parse_expr()?);
+                }
+
+                Ok(Apply { proc: Box::new(proc), args })
+            },
+        }
     }
 
     fn parse_s_expr(&mut self) -> Result<Value, String> {
