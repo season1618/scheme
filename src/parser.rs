@@ -1,8 +1,9 @@
-use crate::data::{Token, TopLevel, Defn, Expr, OprKind};
+use crate::data::{Token, TopLevel, Defn, Expr, OprKind, Value};
 
 use Token::*;
 use Expr::*;
 use OprKind::*;
+use Value::*;
 
 pub fn parse<'a>(tokens: Vec<Token<'a>>) -> Result<Vec<TopLevel>, String> {
     let mut parser = Parser::new(tokens);
@@ -100,6 +101,11 @@ impl<'a> Parser<'a> {
 
                         Set { ident, expr: Box::new(expr) }
                     },
+                    Keyword("quote") => {
+                        self.next_token()?;
+
+                        Quote(Box::new(self.parse_s_expr()?))
+                    },
                     Keyword("if") => {
                         self.next_token()?;
 
@@ -158,13 +164,33 @@ impl<'a> Parser<'a> {
                     _ => return Err(format!("{:?} is not an operator", keyword)),
                 })
             },
-            Ident(ident) => Var(ident.to_string()),
+            Token::Ident(ident) => Var(ident.to_string()),
             Token::Num(val) => Expr::Num(val),
             Token::Bool(val) => Expr::Bool(val),
             Token::Str(val) => Expr::Str(val),
             token => return Err(format!("unexpected token {:?}", token)),
         };
         Ok(expr)
+    }
+
+    fn parse_s_expr(&mut self) -> Result<Value, String> {
+        match self.next_token()? {
+            OpenParen => Ok(self.parse_list()?),
+            Keyword(keyword) => Ok(Symbol(keyword.to_string())),
+            Token::Ident(ident) => Ok(Symbol(ident.to_string())),
+            Token::Num(val) => Ok(Value::Num(val)),
+            Token::Bool(val) => Ok(Value::Bool(val)),
+            Token::Str(val) => Ok(Value::Str(val)),
+            token => return Err(format!("unexpected token {:?}", token)),
+        }
+    }
+
+    fn parse_list(&mut self) -> Result<Value, String> {
+        Ok(if self.next_if(CloseParen) {
+            Value::Nil
+        } else {
+            Pair { car: Box::new(self.parse_s_expr()?), cdr: Box::new(self.parse_list()?) }
+        })
     }
 
     fn peek_if(&self, expected: Token<'a>) -> bool {
@@ -194,7 +220,7 @@ impl<'a> Parser<'a> {
     }
 
     fn next_ident(&mut self) -> Result<String, String> {
-        if let Ident(ident) = self.peek_token()? {
+        if let Token::Ident(ident) = self.peek_token()? {
             self.idx += 1;
             Ok(ident.to_string())
         } else {

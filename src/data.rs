@@ -38,6 +38,7 @@ pub enum Expr {
     LetRec { binds: Vec<(String, Expr)>, expr: Box<Expr> },
     Set { ident: String, expr: Box<Expr> },
     Var(String),
+    Quote(Box<Value>),
     If { cond: Box<Expr>, expr1: Box<Expr>, expr2: Box<Expr> },
     And { args: Vec<Expr> },
     Or { args: Vec<Expr> },
@@ -66,6 +67,7 @@ pub enum OprKind {
 pub enum Value {
     Pair { car: Box<Value>, cdr: Box<Value> },
     Proc(Proc),
+    Symbol(String),
     Num(f32),
     Bool(bool),
     Str(String),
@@ -88,6 +90,7 @@ impl fmt::Display for Value {
                 write!(f, "{:?} -> {:?}: procedure", params, expr)
             },
             Proc(Proc::Opr(opr)) => write!(f, "{:?}: procedure", opr),
+            Symbol(symbol) => write!(f, "{}: symbol", symbol),
             Value::Num(val) => write!(f, "{}: number", val),
             Value::Bool(val) => write!(f, "{}: bool", if *val { "#t" } else { "#f" }),
             Value::Str(val) => write!(f, "{}: string", val),

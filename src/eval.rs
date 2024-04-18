@@ -94,6 +94,7 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
             env.set(ident, value)?
         },
         Var(ident) => env.find(&ident)?,
+        Quote(s_expr) => *s_expr,
         If { cond, expr1, expr2 } => {
             if let Value::Bool(cond) = eval(*cond.clone(), env)? {
                 if cond { eval(*expr1, env)? } else { eval(*expr2, env)? }
