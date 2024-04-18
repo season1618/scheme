@@ -149,6 +149,7 @@ impl<'a> Parser<'a> {
                 self.next_force(CloseParen)?;
                 expr
             },
+            SingleQuote => Quote(Box::new(self.parse_s_expr()?)),
             Keyword(keyword) => {
                 Opr(match &keyword as &str {
                     "cons" => Cons,

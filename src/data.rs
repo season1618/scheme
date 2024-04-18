@@ -10,6 +10,7 @@ use Value::*;
 pub enum Token<'a> {
     OpenParen,
     CloseParen,
+    SingleQuote,
     Keyword(&'a str),
     Ident(&'a str),
     Num(f32),

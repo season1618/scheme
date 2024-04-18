@@ -40,6 +40,11 @@ impl<'a> Lexer<'a> {
                 continue;
             }
 
+            if self.next_if("'") {
+                tokens.push(SingleQuote);
+                continue;
+            }
+
             if c.is_ascii_digit() {
                 tokens.push(self.read_num());
                 continue;
