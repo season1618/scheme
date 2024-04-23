@@ -12,7 +12,7 @@ pub fn exec(nodes: Vec<TopLevel>) -> Result<(), String> {
     Ok(())
 }
 
-fn exec_line(node: TopLevel, env: &mut Env) -> Result<(), String> {
+pub fn exec_line(node: TopLevel, env: &mut Env) -> Result<(), String> {
     match node {
         TopLevel::Defn(defn) => bind(defn, env)?,
         TopLevel::Expr(expr) => println!("{}", eval(expr, env)?),
