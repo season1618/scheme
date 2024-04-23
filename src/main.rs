@@ -8,7 +8,7 @@ use std::fs;
 
 use crate::lexer::tokenize;
 use crate::parser::parse;
-use crate::eval::run;
+use crate::eval::exec;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -27,5 +27,11 @@ fn main() {
             return;
         }
     };
-    run(nodes);
+    match exec(nodes) {
+        Ok(()) => {},
+        Err(err) => {
+            eprintln!("{}", err);
+            return;
+        },
+    }
 }

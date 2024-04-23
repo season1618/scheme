@@ -4,24 +4,20 @@ use Expr::*;
 use OprKind::*;
 use Value::*;
 
-pub fn run(nodes: Vec<TopLevel>) {
+pub fn exec(nodes: Vec<TopLevel>) -> Result<(), String> {
     let mut env = Env::new();
     for node in nodes {
-        match node {
-            TopLevel::Defn(defn) => {
-                match bind(defn, &mut env) {
-                    Ok(()) => {},
-                    Err(err) => { eprintln!("{}", err); return; },
-                }
-            },
-            TopLevel::Expr(expr) => {
-                match eval(expr, &mut env) {
-                    Ok(val) => println!("{}", val),
-                    Err(err) => { eprintln!("{}", err); return; },
-                }
-            },
-        }
+        exec_line(node, &mut env)?;
     }
+    Ok(())
+}
+
+fn exec_line(node: TopLevel, env: &mut Env) -> Result<(), String> {
+    match node {
+        TopLevel::Defn(defn) => bind(defn, env)?,
+        TopLevel::Expr(expr) => println!("{}", eval(expr, env)?),
+    }
+    Ok(())
 }
 
 fn bind(defn: Defn, env: &mut Env) -> Result<(), String> {
