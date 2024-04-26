@@ -83,14 +83,12 @@ impl<'a> Lexer<'a> {
         };
 
         if ["define", "lambda", "let", "let*", "letrec", "set!", "quote", "begin", "if", "and", "or"].iter().any(|&keyword| keyword == prefix) {
-            return Ok(Keyword(prefix));
+            Ok(Keyword(prefix))
+        } else if let Some(operator) = ["cons", "=", "<=", "<", ">=", ">", "+", "-", "*", "/"].iter().find(|&&operator| operator == prefix) {
+            Ok(Operator(operator))
+        } else {
+            Ok(Ident(prefix))
         }
-        for operator in ["cons", "=", "<=", "<", ">=", ">", "+", "-", "*", "/"] {
-            if operator == prefix {
-                return Ok(Operator(operator));
-            }
-        }
-        Ok(Ident(prefix))
     }
 
     fn read_string(&mut self) -> Result<Token<'a>, String> {
