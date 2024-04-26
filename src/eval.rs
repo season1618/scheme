@@ -140,7 +140,24 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
             } else {
                 Err(String::from("the number of arguments is not 1"))
             }
-        }
+        },
+        "pair?" | "procedure?" | "symbol?" | "number?" | "boolean?" | "string?" | "null?" => {
+            if args.len() == 1 {
+                let node = &args[0];
+                match (operator, node) {
+                    ("pair?"     , Pair { .. }   ) |
+                    ("procedure?", Proc(_)       ) |
+                    ("symbol?"   , Symbol(_)     ) |
+                    ("number?"   , Value::Num(_) ) |
+                    ("boolean?"  , Value::Bool(_)) |
+                    ("string?"   , Value::Str(_) ) |
+                    ("null?"     , Value::Nil    ) => Ok(Value::Bool(true)),
+                    _ => Ok(Value::Bool(false)),
+                }
+            } else {
+                Err(String::from("the number of arguments is not 1"))
+            }
+        },
         "="  => Ok(Value::Bool(args.windows(2).all(|p| p[0] == p[1]))),
         "<"  => Ok(Value::Bool(args.windows(2).all(|p| p[0] <  p[1]))),
         "<=" => Ok(Value::Bool(args.windows(2).all(|p| p[0] <= p[1]))),
