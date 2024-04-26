@@ -130,6 +130,17 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
                 Err(String::from("the number of arguments is not 2"))
             }
         },
+        "not" => {
+            if args.len() == 1 {
+                if let Value::Bool(val) = args[0] {
+                    Ok(Value::Bool(!val))
+                } else {
+                    Err(format!("'{:?}' is not boolean", args[0]))
+                }
+            } else {
+                Err(String::from("the number of arguments is not 1"))
+            }
+        }
         "="  => Ok(Value::Bool(args.windows(2).all(|p| p[0] == p[1]))),
         "<"  => Ok(Value::Bool(args.windows(2).all(|p| p[0] <  p[1]))),
         "<=" => Ok(Value::Bool(args.windows(2).all(|p| p[0] <= p[1]))),
