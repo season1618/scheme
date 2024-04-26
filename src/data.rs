@@ -12,7 +12,7 @@ pub enum Token<'a> {
     CloseParen,
     SingleQuote,
     Keyword(&'a str),
-    Operator(&'a str),
+    Operator(&'static str),
     Ident(&'a str),
     Num(f32),
     Bool(bool),
@@ -45,25 +45,11 @@ pub enum Expr {
     If { cond: Box<Expr>, expr1: Box<Expr>, expr2: Box<Expr> },
     And { args: Vec<Expr> },
     Or { args: Vec<Expr> },
-    Opr(OprKind),
+    Opr(&'static str),
     Num(f32),
     Bool(bool),
     Str(String),
     Nil,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum OprKind {
-    Cons,
-    Eq,
-    Lt,
-    Le,
-    Gt,
-    Ge,
-    Add,
-    Sub,
-    Mul,
-    Div,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -80,7 +66,7 @@ pub enum Value {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Proc {
     Lambda { env: Env, params: Vec<String>, expr: Expr },
-    Opr(OprKind),
+    Opr(&'static str),
 }
 
 impl fmt::Display for Value {

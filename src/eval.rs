@@ -1,7 +1,6 @@
-use crate::data::{TopLevel, Defn, Expr, OprKind, Value, Proc, Env};
+use crate::data::{TopLevel, Defn, Expr, Value, Proc, Env};
 
 use Expr::*;
-use OprKind::*;
 use Value::*;
 
 pub fn exec(nodes: Vec<TopLevel>) -> Result<(), String> {
@@ -122,35 +121,36 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
     }
 }
 
-fn eval_opr(opr: OprKind, args: Vec<Value>) -> Result<Value, String> {
-    match opr {
-        Cons => {
+fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
+    match operator {
+        "cons" => {
             if args.len() == 2 {
                 Ok(Pair { car: Box::new(args[0].clone()), cdr: Box::new(args[1].clone()) })
             } else {
                 Err(String::from("the number of arguments is not 2"))
             }
         },
-        Eq => Ok(Value::Bool(args.windows(2).all(|p| p[0] == p[1]))),
-        Lt => Ok(Value::Bool(args.windows(2).all(|p| p[0] <  p[1]))),
-        Le => Ok(Value::Bool(args.windows(2).all(|p| p[0] <= p[1]))),
-        Gt => Ok(Value::Bool(args.windows(2).all(|p| p[0] >  p[1]))),
-        Ge => Ok(Value::Bool(args.windows(2).all(|p| p[0] >= p[1]))),
-        Add => args.into_iter().fold(Ok(Value::Num(0.0)), |sum, val| sum.and_then(|sum| sum + val)),
-        Sub => {
+        "="  => Ok(Value::Bool(args.windows(2).all(|p| p[0] == p[1]))),
+        "<"  => Ok(Value::Bool(args.windows(2).all(|p| p[0] <  p[1]))),
+        "<=" => Ok(Value::Bool(args.windows(2).all(|p| p[0] <= p[1]))),
+        ">"  => Ok(Value::Bool(args.windows(2).all(|p| p[0] >  p[1]))),
+        ">=" => Ok(Value::Bool(args.windows(2).all(|p| p[0] >= p[1]))),
+        "+"  => args.into_iter().fold(Ok(Value::Num(0.0)), |sum, val| sum.and_then(|sum| sum + val)),
+        "-"  => {
             let (minuend, subtrahends) = {
                 let mut args = args.into_iter();
                 (args.next().ok_or(String::from("'-' requires at least 1 argument")), args)
             };
             subtrahends.fold(minuend, |sum, val| sum.and_then(|sum| sum - val))
         },
-        Mul => args.into_iter().fold(Ok(Value::Num(1.0)), |prod, val| prod.and_then(|prod| prod * val)),
-        Div => {
+        "*"  => args.into_iter().fold(Ok(Value::Num(1.0)), |prod, val| prod.and_then(|prod| prod * val)),
+        "/"  => {
             let (dividend, divisors) = {
                 let mut args = args.into_iter();
                 (args.next().ok_or(String::from("'-' requires at least 1 argument")), args)
             };
             divisors.fold(dividend, |prod, val| prod.and_then(|prod| prod / val))
         },
+        _ => Err(format!("'{operator}' is invalid operator")),
     }
 }

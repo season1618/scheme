@@ -1,8 +1,7 @@
-use crate::data::{Token, TopLevel, Defn, Expr, OprKind, Value};
+use crate::data::{Token, TopLevel, Defn, Expr, Value};
 
 use Token::*;
 use Expr::*;
-use OprKind::*;
 use Value::*;
 
 pub fn parse<'a>(tokens: Vec<Token<'a>>) -> Result<Vec<TopLevel>, String> {
@@ -62,21 +61,7 @@ impl<'a> Parser<'a> {
                 Ok(expr)
             },
             SingleQuote => Ok(Quote(Box::new(self.parse_s_expr()?))),
-            Operator(operator) => {
-                match operator {
-                    "cons" => Ok(Expr::Opr(Cons)),
-                    "="  => Ok(Expr::Opr(Eq)),
-                    "<"  => Ok(Expr::Opr(Lt)),
-                    "<=" => Ok(Expr::Opr(Le)),
-                    ">"  => Ok(Expr::Opr(Gt)),
-                    ">=" => Ok(Expr::Opr(Ge)),
-                    "+"  => Ok(Expr::Opr(Add)),
-                    "-"  => Ok(Expr::Opr(Sub)),
-                    "*"  => Ok(Expr::Opr(Mul)),
-                    "/"  => Ok(Expr::Opr(Div)),
-                    _ => panic!(),
-                }
-            },
+            Operator(operator) => Ok(Opr(operator)),
             Token::Ident(ident) => Ok(Var(ident.to_string())),
             Token::Num(val) => Ok(Expr::Num(val)),
             Token::Bool(val) => Ok(Expr::Bool(val)),
