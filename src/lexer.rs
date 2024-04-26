@@ -82,8 +82,8 @@ impl<'a> Lexer<'a> {
             }
         };
 
-        if ["define", "lambda", "let", "let*", "letrec", "set!", "quote", "begin", "if", "and", "or"].iter().any(|&keyword| keyword == prefix) {
-            Ok(Keyword(prefix))
+        if let Some(keyword) = ["define", "lambda", "let", "let*", "letrec", "set!", "quote", "begin", "if", "and", "or"].iter().find(|&&keyword| keyword == prefix) {
+            Ok(Keyword(keyword))
         } else if let Some(operator) = ["cons", "=", "<=", "<", ">=", ">", "+", "-", "*", "/"].iter().find(|&&operator| operator == prefix) {
             Ok(Operator(operator))
         } else {
