@@ -124,6 +124,20 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
 fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
     match (operator, args.len()) {
         ("cons", 2) => Ok(Pair { car: Box::new(args[0].clone()), cdr: Box::new(args[1].clone()) }),
+        ("car" , 1) => {
+            if let Pair { car, .. } = &args[0] {
+                Ok(*car.clone())
+            } else {
+                Err(format!("{:?} is not pair", args[0]))
+            }
+        },
+        ("cdr" , 1) => {
+            if let Pair { cdr, .. } = &args[0] {
+                Ok(*cdr.clone())
+            } else {
+                Err(format!("{:?} is not pair", args[0]))
+            }
+        },
         ("not", 1) => {
             if let Value::Bool(val) = args[0] {
                 Ok(Value::Bool(!val))
