@@ -54,7 +54,7 @@ pub enum Expr {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
-    Pair { car: Box<Value>, cdr: Box<Value> },
+    Pair { car: Rc<RefCell<Value>>, cdr: Rc<RefCell<Value>> },
     Proc(Proc),
     Symbol(String),
     Num(f32),
@@ -72,7 +72,7 @@ pub enum Proc {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Pair { car, cdr } => write!(f, "({} . {})", *car, *cdr),
+            Pair { car, cdr } => write!(f, "({} . {})", *car.borrow(), *cdr.borrow()),
             Proc(Proc::Lambda { env, params, expr }) => {
                 write!(f, "env\n")?;
                 write!(f, "{}", env)?;

@@ -1,5 +1,8 @@
 use crate::data::{TopLevel, Defn, Expr, Value, Proc, Env};
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
 use Expr::*;
 use Value::*;
 
@@ -123,17 +126,33 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
 
 fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
     match (operator, args.len()) {
-        ("cons", 2) => Ok(Pair { car: Box::new(args[0].clone()), cdr: Box::new(args[1].clone()) }),
+        ("cons", 2) => Ok(Pair { car: Rc::new(RefCell::new(args[0].clone())), cdr: Rc::new(RefCell::new(args[1].clone())) }),
         ("car" , 1) => {
             if let Pair { car, .. } = &args[0] {
-                Ok(*car.clone())
+                Ok((*car.borrow()).clone())
             } else {
                 Err(format!("{:?} is not pair", args[0]))
             }
         },
         ("cdr" , 1) => {
             if let Pair { cdr, .. } = &args[0] {
-                Ok(*cdr.clone())
+                Ok((*cdr.borrow()).clone())
+            } else {
+                Err(format!("{:?} is not pair", args[0]))
+            }
+        },
+        ("set-car!", 2) => {
+            if let Pair { car, cdr } = &args[0] {
+                *car.borrow_mut() = args[1].clone();
+                Ok(Pair { car: Rc::clone(car), cdr: Rc::clone(cdr) })
+            } else {
+                Err(format!("{:?} is not pair", args[0]))
+            }
+        },
+        ("set-cdr!", 2) => {
+            if let Pair { car, cdr } = &args[0] {
+                *cdr.borrow_mut() = args[1].clone();
+                Ok(Pair { car: Rc::clone(car), cdr: Rc::clone(cdr) })
             } else {
                 Err(format!("{:?} is not pair", args[0]))
             }

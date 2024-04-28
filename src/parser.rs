@@ -1,5 +1,8 @@
 use crate::data::{Token, TopLevel, Defn, Expr, Value};
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
 use Token::*;
 use Expr::*;
 use Value::*;
@@ -175,7 +178,7 @@ impl<'a> Parser<'a> {
         Ok(if self.next_if(CloseParen) {
             Value::Nil
         } else {
-            Pair { car: Box::new(self.parse_s_expr()?), cdr: Box::new(self.parse_list()?) }
+            Pair { car: Rc::new(RefCell::new(self.parse_s_expr()?)), cdr: Rc::new(RefCell::new(self.parse_list()?)) }
         })
     }
 
