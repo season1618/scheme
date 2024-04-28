@@ -122,63 +122,48 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
 }
 
 fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
-    match operator {
-        "cons" => {
-            if args.len() == 2 {
-                Ok(Pair { car: Box::new(args[0].clone()), cdr: Box::new(args[1].clone()) })
+    match (operator, args.len()) {
+        ("cons", 2) => Ok(Pair { car: Box::new(args[0].clone()), cdr: Box::new(args[1].clone()) }),
+        ("not", 1) => {
+            if let Value::Bool(val) = args[0] {
+                Ok(Value::Bool(!val))
             } else {
-                Err(String::from("the number of arguments is not 2"))
+                Err(format!("'{:?}' is not boolean", args[0]))
             }
         },
-        "not" => {
-            if args.len() == 1 {
-                if let Value::Bool(val) = args[0] {
-                    Ok(Value::Bool(!val))
-                } else {
-                    Err(format!("'{:?}' is not boolean", args[0]))
-                }
-            } else {
-                Err(String::from("the number of arguments is not 1"))
+        (ident, 1) if ["pair?", "procedure?", "symbol?", "number?", "boolean?", "string?", "null?"].contains(&ident) => {
+            match (operator, &args[0]) {
+                ("pair?"     , Pair { .. }   ) |
+                ("procedure?", Proc(_)       ) |
+                ("symbol?"   , Symbol(_)     ) |
+                ("number?"   , Value::Num(_) ) |
+                ("boolean?"  , Value::Bool(_)) |
+                ("string?"   , Value::Str(_) ) |
+                ("null?"     , Value::Nil    ) => Ok(Value::Bool(true)),
+                _ => Ok(Value::Bool(false)),
             }
         },
-        "pair?" | "procedure?" | "symbol?" | "number?" | "boolean?" | "string?" | "null?" => {
-            if args.len() == 1 {
-                let node = &args[0];
-                match (operator, node) {
-                    ("pair?"     , Pair { .. }   ) |
-                    ("procedure?", Proc(_)       ) |
-                    ("symbol?"   , Symbol(_)     ) |
-                    ("number?"   , Value::Num(_) ) |
-                    ("boolean?"  , Value::Bool(_)) |
-                    ("string?"   , Value::Str(_) ) |
-                    ("null?"     , Value::Nil    ) => Ok(Value::Bool(true)),
-                    _ => Ok(Value::Bool(false)),
-                }
-            } else {
-                Err(String::from("the number of arguments is not 1"))
-            }
-        },
-        "="  => Ok(Value::Bool(args.windows(2).all(|p| p[0] == p[1]))),
-        "<"  => Ok(Value::Bool(args.windows(2).all(|p| p[0] <  p[1]))),
-        "<=" => Ok(Value::Bool(args.windows(2).all(|p| p[0] <= p[1]))),
-        ">"  => Ok(Value::Bool(args.windows(2).all(|p| p[0] >  p[1]))),
-        ">=" => Ok(Value::Bool(args.windows(2).all(|p| p[0] >= p[1]))),
-        "+"  => args.into_iter().fold(Ok(Value::Num(0.0)), |sum, val| sum.and_then(|sum| sum + val)),
-        "-"  => {
+        ("=" , _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] == p[1]))),
+        ("<" , _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] <  p[1]))),
+        ("<=", _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] <= p[1]))),
+        (">" , _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] >  p[1]))),
+        (">=", _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] >= p[1]))),
+        ("+" , _) => args.into_iter().fold(Ok(Value::Num(0.0)), |sum, val| sum.and_then(|sum| sum + val)),
+        ("-" , _) => {
             let (minuend, subtrahends) = {
                 let mut args = args.into_iter();
                 (args.next().ok_or(String::from("'-' requires at least 1 argument")), args)
             };
             subtrahends.fold(minuend, |sum, val| sum.and_then(|sum| sum - val))
         },
-        "*"  => args.into_iter().fold(Ok(Value::Num(1.0)), |prod, val| prod.and_then(|prod| prod * val)),
-        "/"  => {
+        ("*" , _) => args.into_iter().fold(Ok(Value::Num(1.0)), |prod, val| prod.and_then(|prod| prod * val)),
+        ("/" , _) => {
             let (dividend, divisors) = {
                 let mut args = args.into_iter();
                 (args.next().ok_or(String::from("'-' requires at least 1 argument")), args)
             };
             divisors.fold(dividend, |prod, val| prod.and_then(|prod| prod / val))
         },
-        _ => Err(format!("'{operator}' is invalid operator")),
+        (_, n) => Err(format!("the number of argments is not {n}")),
     }
 }
