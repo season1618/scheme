@@ -179,6 +179,7 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
         },
         ("length", 1) => length(&args[0]).map(|val| Value::Num(val as f32)),
         ("memq", 2) => Ok(memq(&args[0], &args[1])),
+        ("last", 1) => last(&args[0]),
         ("=" , _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] == p[1]))),
         ("<" , _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] <  p[1]))),
         ("<=", _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] <= p[1]))),
@@ -230,5 +231,18 @@ fn memq(first: &Value, list: &Value) -> Value {
             }
         },
         _ => Value::Bool(false),
+    }
+}
+
+fn last(list: &Value) -> Result<Value, String> {
+    match list {
+        Pair { car, cdr } => {
+            if let Pair { .. } = *cdr.borrow() {
+                last(&cdr.borrow())
+            } else {
+                Ok(car.borrow().clone())
+            }
+        },
+        _ => Err(String::from("not pair")),
     }
 }
