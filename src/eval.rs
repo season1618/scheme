@@ -178,6 +178,7 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
             }
         },
         ("length", 1) => length(&args[0]).map(|val| Value::Num(val as f32)),
+        ("memq", 2) => Ok(memq(&args[0], &args[1])),
         ("=" , _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] == p[1]))),
         ("<" , _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] <  p[1]))),
         ("<=", _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] <= p[1]))),
@@ -216,5 +217,18 @@ fn length(value: &Value) -> Result<u32, String> {
         Pair { cdr, .. } => Ok(1 + length(&cdr.borrow())?),
         Value::Nil => Ok(0),
         _ => Err(String::from("not list")),
+    }
+}
+
+fn memq(first: &Value, list: &Value) -> Value {
+    match list {
+        Pair { car, cdr } => {
+            if *first == *car.borrow() {
+                Pair { car: Rc::clone(car), cdr: Rc::clone(cdr) }
+            } else {
+                memq(first, &cdr.borrow())
+            }
+        },
+        _ => Value::Bool(false),
     }
 }
