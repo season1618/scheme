@@ -180,6 +180,7 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
         ("length", 1) => length(&args[0]).map(|val| Value::Num(val as f32)),
         ("memq", 2) => Ok(memq(&args[0], &args[1])),
         ("last", 1) => last(&args[0]),
+        ("append", 2) => append(&args[0], &args[1]),
         ("=" , _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] == p[1]))),
         ("<" , _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] <  p[1]))),
         ("<=", _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] <= p[1]))),
@@ -244,5 +245,13 @@ fn last(list: &Value) -> Result<Value, String> {
             }
         },
         _ => Err(String::from("not pair")),
+    }
+}
+
+fn append(list1: &Value, list2: &Value) -> Result<Value, String> {
+    match list1 {
+        Pair { car, cdr } => Ok(Pair { car: Rc::clone(car), cdr: Rc::new(RefCell::new(append(&cdr.borrow(), list2)?)) }),
+        Value::Nil => Ok(list2.clone()),
+        _ => Err(String::from("not list")),
     }
 }
