@@ -174,6 +174,14 @@ impl Value {
         }
     }
 
+    pub fn list(values: Vec<Value>) -> Value {
+        let mut list = Value::Nil;
+        for value in values.into_iter().rev() {
+            list = Pair(Rc::new(RefCell::new((value, list))));
+        }
+        list
+    }
+
     pub fn is_list(&self) -> bool {
         match self {
             Pair(pair) => pair.borrow().1.is_list(),

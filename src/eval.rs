@@ -180,6 +180,7 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
                 _ => Ok(Value::Bool(false)),
             }
         },
+        ("list"  , _) => Ok(Value::list(args)),
         ("length", 1) => args[0].length().map(|val| Value::Num(val as f32)),
         ("last"  , 1) => args[0].last(),
         ("memq"  , 2) => Ok(Value::memq(&args[0], &args[1])),
