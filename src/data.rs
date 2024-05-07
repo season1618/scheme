@@ -161,6 +161,19 @@ impl Value {
         }
     }
 
+    pub fn equal(lhs: &Value, rhs: &Value) -> bool {
+        match (lhs, rhs) {
+            (Pair(lhs), Pair(rhs)) => Self::equal(&lhs.borrow().0, &rhs.borrow().0) && Self::equal(&lhs.borrow().1, &rhs.borrow().1),
+            (Proc(_), Proc(_)) => false,
+            (Symbol(lhs)     , Symbol(rhs)     ) => lhs == rhs,
+            (Value::Num(lhs) , Value::Num(rhs) ) => lhs == rhs,
+            (Value::Bool(lhs), Value::Bool(rhs)) => lhs == rhs,
+            (Value::Str(lhs) , Value::Str(rhs) ) => lhs == rhs,
+            (Value::Nil      , Value::Nil      ) => lhs == rhs,
+            _ => false,
+        }
+    }
+
     pub fn is_list(&self) -> bool {
         match self {
             Pair(pair) => pair.borrow().1.is_list(),
