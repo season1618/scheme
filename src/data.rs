@@ -147,6 +147,59 @@ impl Div for Value {
     }
 }
 
+impl Value {
+    pub fn is_list(&self) -> bool {
+        match self {
+            Pair { cdr, .. } => cdr.borrow().is_list(),
+            Value::Nil => true,
+            _ => false,
+        }
+    }
+    
+    pub fn length(&self) -> Result<u32, String> {
+        match self {
+            Pair { cdr, .. } => Ok(1 + cdr.borrow().length()?),
+            Value::Nil => Ok(0),
+            _ => Err(String::from("not list")),
+        }
+    }
+
+    pub fn last(&self) -> Result<Value, String> {
+        match self {
+            Pair { car, cdr } => {
+                if let Pair { .. } = *cdr.borrow() {
+                    cdr.borrow().last()
+                } else {
+                    Ok(car.borrow().clone())
+                }
+            },
+            _ => Err(String::from("not pair")),
+        }
+    }
+    
+    pub fn memq(first: &Value, list: &Value) -> Value {
+        match list {
+            Pair { car, cdr } => {
+                if *first == *car.borrow() {
+                    Pair { car: Rc::clone(car), cdr: Rc::clone(cdr) }
+                } else {
+                    Self::memq(first, &cdr.borrow())
+                }
+            },
+            _ => Value::Bool(false),
+        }
+    }
+    
+    pub fn append(list1: &Value, list2: &Value) -> Result<Value, String> {
+        match list1 {
+            Pair { car, cdr } => Ok(Pair { car: Rc::clone(car), cdr: Rc::new(RefCell::new(Self::append(&cdr.borrow(), list2)?)) }),
+            Value::Nil => Ok(list2.clone()),
+            _ => Err(String::from("not list")),
+        }
+    }
+    
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Env(Rc<RefCell<(Vec<(String, Value)>, Option<Env>)>>);
 

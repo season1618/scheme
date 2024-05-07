@@ -164,7 +164,7 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
                 Err(format!("'{:?}' is not boolean", args[0]))
             }
         },
-        ("list?", 1) => Ok(Value::Bool(is_list(&args[0]))),
+        ("list?", 1) => Ok(Value::Bool(args[0].is_list())),
         (ident, 1) if ["pair?", "procedure?", "symbol?", "number?", "boolean?", "string?", "null?"].contains(&ident) => {
             match (operator, &args[0]) {
                 ("pair?"     , Pair { .. }   ) |
@@ -177,10 +177,10 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
                 _ => Ok(Value::Bool(false)),
             }
         },
-        ("length", 1) => length(&args[0]).map(|val| Value::Num(val as f32)),
-        ("memq", 2) => Ok(memq(&args[0], &args[1])),
-        ("last", 1) => last(&args[0]),
-        ("append", 2) => append(&args[0], &args[1]),
+        ("length", 1) => args[0].length().map(|val| Value::Num(val as f32)),
+        ("last"  , 1) => args[0].last(),
+        ("memq"  , 2) => Ok(Value::memq(&args[0], &args[1])),
+        ("append", 2) => Value::append(&args[0], &args[1]),
         ("=" , _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] == p[1]))),
         ("<" , _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] <  p[1]))),
         ("<=", _) => Ok(Value::Bool(args.windows(2).all(|p| p[0] <= p[1]))),
@@ -203,55 +203,5 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
             divisors.fold(dividend, |prod, val| prod.and_then(|prod| prod / val))
         },
         (_, n) => Err(format!("the number of argments is not {n}")),
-    }
-}
-
-fn is_list(value: &Value) -> bool {
-    match value {
-        Pair { cdr, .. } => is_list(&cdr.borrow()),
-        Value::Nil => true,
-        _ => false,
-    }
-}
-
-fn length(value: &Value) -> Result<u32, String> {
-    match value {
-        Pair { cdr, .. } => Ok(1 + length(&cdr.borrow())?),
-        Value::Nil => Ok(0),
-        _ => Err(String::from("not list")),
-    }
-}
-
-fn memq(first: &Value, list: &Value) -> Value {
-    match list {
-        Pair { car, cdr } => {
-            if *first == *car.borrow() {
-                Pair { car: Rc::clone(car), cdr: Rc::clone(cdr) }
-            } else {
-                memq(first, &cdr.borrow())
-            }
-        },
-        _ => Value::Bool(false),
-    }
-}
-
-fn last(list: &Value) -> Result<Value, String> {
-    match list {
-        Pair { car, cdr } => {
-            if let Pair { .. } = *cdr.borrow() {
-                last(&cdr.borrow())
-            } else {
-                Ok(car.borrow().clone())
-            }
-        },
-        _ => Err(String::from("not pair")),
-    }
-}
-
-fn append(list1: &Value, list2: &Value) -> Result<Value, String> {
-    match list1 {
-        Pair { car, cdr } => Ok(Pair { car: Rc::clone(car), cdr: Rc::new(RefCell::new(append(&cdr.borrow(), list2)?)) }),
-        Value::Nil => Ok(list2.clone()),
-        _ => Err(String::from("not list")),
     }
 }
