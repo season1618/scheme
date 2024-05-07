@@ -223,7 +223,41 @@ impl Value {
             _ => Err(String::from("not list")),
         }
     }
-    
+
+    pub fn symbol_to_string(&self) -> Result<Value, String> {
+        if let Symbol(symbol) = self {
+            Ok(Value::Str(Rc::new(symbol.clone())))
+        } else {
+            Err(String::from("not symbol"))
+        }
+    }
+
+    pub fn string_to_symbol(&self) -> Result<Value, String> {
+        if let Value::Str(string) = self {
+            Ok(Symbol((**string).clone()))
+        } else {
+            Err(String::from("not string"))
+        }
+    }
+
+    pub fn number_to_string(&self) -> Result<Value, String> {
+        if let Value::Num(val) = self {
+            Ok(Value::Str(Rc::new(val.to_string())))
+        } else {
+            Err(String::from("not number"))
+        }
+    }
+
+    pub fn string_to_number(&self) -> Result<Value, String> {
+        if let Value::Str(string) = self {
+            match string.parse() {
+                Ok(val) => Ok(Value::Num(val)),
+                Err(_) => Err(String::from("can not convert to number"))
+            }
+        } else {
+            Err(String::from("not string"))
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
