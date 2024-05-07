@@ -126,33 +126,33 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
 
 fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
     match (operator, args.len()) {
-        ("cons", 2) => Ok(Pair { car: Rc::new(RefCell::new(args[0].clone())), cdr: Rc::new(RefCell::new(args[1].clone())) }),
+        ("cons", 2) => Ok(Pair(Rc::new(RefCell::new((args[0].clone(), args[1].clone()))))),
         ("car" , 1) => {
-            if let Pair { car, .. } = &args[0] {
-                Ok((*car.borrow()).clone())
+            if let Pair(pair) = &args[0] {
+                Ok((pair.borrow().0).clone())
             } else {
                 Err(format!("{:?} is not pair", args[0]))
             }
         },
         ("cdr" , 1) => {
-            if let Pair { cdr, .. } = &args[0] {
-                Ok((*cdr.borrow()).clone())
+            if let Pair(pair) = &args[0] {
+                Ok((pair.borrow().1).clone())
             } else {
                 Err(format!("{:?} is not pair", args[0]))
             }
         },
         ("set-car!", 2) => {
-            if let Pair { car, cdr } = &args[0] {
-                *car.borrow_mut() = args[1].clone();
-                Ok(Pair { car: Rc::clone(car), cdr: Rc::clone(cdr) })
+            if let Pair(pair) = &args[0] {
+                pair.borrow_mut().0 = args[1].clone();
+                Ok(Pair(Rc::clone(pair)))
             } else {
                 Err(format!("{:?} is not pair", args[0]))
             }
         },
         ("set-cdr!", 2) => {
-            if let Pair { car, cdr } = &args[0] {
-                *cdr.borrow_mut() = args[1].clone();
-                Ok(Pair { car: Rc::clone(car), cdr: Rc::clone(cdr) })
+            if let Pair(pair) = &args[0] {
+                pair.borrow_mut().1 = args[1].clone();
+                Ok(Pair(Rc::clone(pair)))
             } else {
                 Err(format!("{:?} is not pair", args[0]))
             }
@@ -168,7 +168,7 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
         ("list?", 1) => Ok(Value::Bool(args[0].is_list())),
         (ident, 1) if ["pair?", "procedure?", "symbol?", "number?", "boolean?", "string?", "null?"].contains(&ident) => {
             match (operator, &args[0]) {
-                ("pair?"     , Pair { .. }   ) |
+                ("pair?"     , Pair(_)       ) |
                 ("procedure?", Proc(_)       ) |
                 ("symbol?"   , Symbol(_)     ) |
                 ("number?"   , Value::Num(_) ) |

@@ -54,7 +54,7 @@ pub enum Expr {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
-    Pair { car: Rc<RefCell<Value>>, cdr: Rc<RefCell<Value>> },
+    Pair(Rc<RefCell<(Value, Value)>>),
     Proc(Proc),
     Symbol(String),
     Num(f32),
@@ -72,7 +72,7 @@ pub enum Proc {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Pair { car, cdr } => write!(f, "({} . {})", *car.borrow(), *cdr.borrow()),
+            Pair(pair) => write!(f, "({} . {})", pair.borrow().0, pair.borrow().1),
             Proc(Proc::Lambda { env, params, expr }) => {
                 write!(f, "env\n")?;
                 write!(f, "{}", env)?;
@@ -150,7 +150,7 @@ impl Div for Value {
 impl Value {
     pub fn equal(lhs: &Value, rhs: &Value) -> bool {
         match (lhs, rhs) {
-            (Pair { car: lcar, cdr: lcdr }, Pair { car: rcar, cdr: rcdr }) => Self::equal(&lcar.borrow(), &rcar.borrow()) && Self::equal(&lcdr.borrow(), &rcdr.borrow()),
+            (Pair(lhs), Pair(rhs)) => Rc::ptr_eq(lhs, rhs),
             (Proc(_), Proc(_)) => false,
             (Symbol(lhs)     , Symbol(rhs)     ) => lhs == rhs,
             (Value::Num(lhs) , Value::Num(rhs) ) => lhs == rhs,
@@ -163,7 +163,7 @@ impl Value {
 
     pub fn is_list(&self) -> bool {
         match self {
-            Pair { cdr, .. } => cdr.borrow().is_list(),
+            Pair(pair) => pair.borrow().1.is_list(),
             Value::Nil => true,
             _ => false,
         }
@@ -171,7 +171,7 @@ impl Value {
     
     pub fn length(&self) -> Result<u32, String> {
         match self {
-            Pair { cdr, .. } => Ok(1 + cdr.borrow().length()?),
+            Pair(pair) => Ok(1 + pair.borrow().1.length()?),
             Value::Nil => Ok(0),
             _ => Err(String::from("not list")),
         }
@@ -179,11 +179,11 @@ impl Value {
 
     pub fn last(&self) -> Result<Value, String> {
         match self {
-            Pair { car, cdr } => {
-                if let Pair { .. } = *cdr.borrow() {
-                    cdr.borrow().last()
+            Pair(pair) => {
+                if let Pair(_) = pair.borrow().1 {
+                    pair.borrow().1.last()
                 } else {
-                    Ok(car.borrow().clone())
+                    Ok(pair.borrow().0.clone())
                 }
             },
             _ => Err(String::from("not pair")),
@@ -192,11 +192,11 @@ impl Value {
     
     pub fn memq(first: &Value, list: &Value) -> Value {
         match list {
-            Pair { car, cdr } => {
-                if *first == *car.borrow() {
-                    Pair { car: Rc::clone(car), cdr: Rc::clone(cdr) }
+            Pair(pair) => {
+                if *first == pair.borrow().0 {
+                    Pair(Rc::clone(pair))
                 } else {
-                    Self::memq(first, &cdr.borrow())
+                    Self::memq(first, &pair.borrow().1)
                 }
             },
             _ => Value::Bool(false),
@@ -205,7 +205,7 @@ impl Value {
     
     pub fn append(list1: &Value, list2: &Value) -> Result<Value, String> {
         match list1 {
-            Pair { car, cdr } => Ok(Pair { car: Rc::clone(car), cdr: Rc::new(RefCell::new(Self::append(&cdr.borrow(), list2)?)) }),
+            Pair(pair) => Ok(Pair(Rc::new(RefCell::new((pair.borrow().0.clone(), Self::append(&pair.borrow().1, list2)?))))),
             Value::Nil => Ok(list2.clone()),
             _ => Err(String::from("not list")),
         }

@@ -178,7 +178,7 @@ impl<'a> Parser<'a> {
         Ok(if self.next_if(CloseParen) {
             Value::Nil
         } else {
-            Pair { car: Rc::new(RefCell::new(self.parse_s_expr()?)), cdr: Rc::new(RefCell::new(self.parse_list()?)) }
+            Pair(Rc::new(RefCell::new((self.parse_s_expr()?, self.parse_list()?))))
         })
     }
 
