@@ -148,6 +148,19 @@ impl Div for Value {
 }
 
 impl Value {
+    pub fn equal(lhs: &Value, rhs: &Value) -> bool {
+        match (lhs, rhs) {
+            (Pair { car: lcar, cdr: lcdr }, Pair { car: rcar, cdr: rcdr }) => Self::equal(&lcar.borrow(), &rcar.borrow()) && Self::equal(&lcdr.borrow(), &rcdr.borrow()),
+            (Proc(_), Proc(_)) => false,
+            (Symbol(lhs)     , Symbol(rhs)     ) => lhs == rhs,
+            (Value::Num(lhs) , Value::Num(rhs) ) => lhs == rhs,
+            (Value::Bool(lhs), Value::Bool(rhs)) => lhs == rhs,
+            (Value::Str(lhs) , Value::Str(rhs) ) => lhs == rhs,
+            (Value::Nil      , Value::Nil      ) => lhs == rhs,
+            _ => false,
+        }
+    }
+
     pub fn is_list(&self) -> bool {
         match self {
             Pair { cdr, .. } => cdr.borrow().is_list(),
