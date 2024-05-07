@@ -148,7 +148,7 @@ impl Div for Value {
 }
 
 impl Value {
-    pub fn equal(lhs: &Value, rhs: &Value) -> bool {
+    pub fn eq(lhs: &Value, rhs: &Value) -> bool {
         match (lhs, rhs) {
             (Pair(lhs), Pair(rhs)) => Rc::ptr_eq(lhs, rhs),
             (Proc(_), Proc(_)) => false,

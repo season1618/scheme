@@ -164,7 +164,8 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
                 Err(format!("'{:?}' is not boolean", args[0]))
             }
         },
-        ("eq?", 2) => Ok(Value::Bool(Value::equal(&args[0], &args[1]))),
+        ("eq?" , 2) => Ok(Value::Bool(Value::eq(&args[0], &args[1]))),
+        ("neq?", 2) => Ok(Value::Bool(!Value::eq(&args[0], &args[1]))),
         ("list?", 1) => Ok(Value::Bool(args[0].is_list())),
         (ident, 1) if ["pair?", "procedure?", "symbol?", "number?", "boolean?", "string?", "null?"].contains(&ident) => {
             match (operator, &args[0]) {
