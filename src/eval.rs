@@ -205,6 +205,7 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
             };
             divisors.fold(dividend, |prod, val| prod.and_then(|prod| prod / val))
         },
+        ("string-append" , _) => Value::string_append(args),
         ("symbol->string", 1) => args[0].symbol_to_string(),
         ("string->symbol", 1) => args[0].string_to_symbol(),
         ("number->string", 1) => args[0].number_to_string(),

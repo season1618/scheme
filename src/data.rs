@@ -224,6 +224,18 @@ impl Value {
         }
     }
 
+    pub fn string_append(values: Vec<Value>) -> Result<Value, String> {
+        let mut sum = String::new();
+        for value in values {
+            if let Value::Str(string) = value {
+                sum.push_str(&string);
+            } else {
+                return Err(String::from("not string"));
+            }
+        }
+        Ok(Value::Str(Rc::new(sum)))
+    }
+
     pub fn symbol_to_string(&self) -> Result<Value, String> {
         if let Symbol(symbol) = self {
             Ok(Value::Str(Rc::new(symbol.clone())))
