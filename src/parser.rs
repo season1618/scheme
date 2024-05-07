@@ -169,7 +169,7 @@ impl<'a> Parser<'a> {
             Token::Ident(ident) => Ok(Symbol(ident.to_string())),
             Token::Num(val) => Ok(Value::Num(val)),
             Token::Bool(val) => Ok(Value::Bool(val)),
-            Token::Str(val) => Ok(Value::Str(val)),
+            Token::Str(val) => Ok(Value::Str(Rc::new(val))),
             token => return Err(format!("unexpected token {:?}", token)),
         }
     }

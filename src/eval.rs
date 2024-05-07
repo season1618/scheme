@@ -119,7 +119,7 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
         Expr::Opr(opr) => Ok(Proc(Proc::Opr(opr))),
         Expr::Num(val) => Ok(Value::Num(val)),
         Expr::Bool(val) => Ok(Value::Bool(val)),
-        Expr::Str(val) => Ok(Value::Str(val)),
+        Expr::Str(val) => Ok(Value::Str(Rc::new(val))),
         Expr::Nil => Ok(Value::Nil),
     }
 }

@@ -59,7 +59,7 @@ pub enum Value {
     Symbol(String),
     Num(f32),
     Bool(bool),
-    Str(String),
+    Str(Rc<String>),
     Nil,
 }
 
@@ -155,7 +155,7 @@ impl Value {
             (Symbol(lhs)     , Symbol(rhs)     ) => lhs == rhs,
             (Value::Num(lhs) , Value::Num(rhs) ) => lhs == rhs,
             (Value::Bool(lhs), Value::Bool(rhs)) => lhs == rhs,
-            (Value::Str(lhs) , Value::Str(rhs) ) => lhs == rhs,
+            (Value::Str(lhs) , Value::Str(rhs) ) => Rc::ptr_eq(lhs, rhs),
             (Value::Nil      , Value::Nil      ) => lhs == rhs,
             _ => false,
         }
