@@ -329,9 +329,9 @@ impl Env {
         }
     }
 
-    pub fn set(&mut self, expected: String, new_value: Value) -> Result<Value, String> {
+    pub fn set(&mut self, expected: &String, new_value: Value) -> Result<Value, String> {
         for (ident, value) in self.0.borrow_mut().0.iter_mut().rev() {
-            if *ident == expected {
+            if ident == expected {
                 *value = new_value.clone();
                 return Ok(new_value);
             }

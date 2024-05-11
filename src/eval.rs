@@ -54,13 +54,13 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
             }
             for (ident, expr) in binds {
                 let value = eval(expr, env)?;
-                env.set(ident, value)?;
+                env.set(&ident, value)?;
             }
             eval(*expr, env)
         },
         Set { ident, expr } => {
             let value = eval(*expr, env)?;
-            env.set(ident, value)
+            env.set(&ident, value)
         },
         Var(ident) => env.find(&ident),
         Quote(s_expr) => Ok(*s_expr),
@@ -109,7 +109,7 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
                 eval(*body.clone(), env)?;
                 for (ident, _, update) in &binds {
                     let value = eval(update.clone(), env)?;
-                    env.set(ident.clone(), value);
+                    env.set(ident, value)?;
                 }
             }
 
