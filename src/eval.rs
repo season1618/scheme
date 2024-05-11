@@ -262,6 +262,7 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
             for arg in args {
                 print!("{} ", arg);
             }
+            println!("");
             Ok(Value::Nil)
         },
         (_, n) => Err(format!("the number of argments is not {n}")),
