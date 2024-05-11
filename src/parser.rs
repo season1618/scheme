@@ -146,6 +146,33 @@ impl<'a> Parser<'a> {
 
                     Ok(Or { args })
                 },
+                "do" => {
+                    let mut binds = Vec::new();
+                    self.next_force(OpenParen)?;
+                    while self.next_if(OpenParen) {
+                        let ident = self.next_ident()?;
+                        let init = self.parse_expr()?;
+                        let update = self.parse_expr()?;
+                        binds.push((ident, init, update));
+                        self.next_force(CloseParen)?;
+                    }
+                    self.next_force(CloseParen)?;
+
+                    self.next_force(OpenParen)?;
+                    let test = self.parse_expr()?;
+                    let mut exprs = Vec::new();
+                    loop {
+                        let expr = self.parse_expr()?;
+                        exprs.push(expr);
+                        if self.next_if(CloseParen) {
+                            break;
+                        }
+                    }
+
+                    let body = self.parse_expr()?;
+
+                    Ok(Do { binds, test: Box::new(test), exprs, body: Box::new(body) })
+                }
                 _ => Err(format!("{} is unavailable", keyword)),
             }
         } else if self.peek_if(CloseParen) {

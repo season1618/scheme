@@ -45,6 +45,7 @@ pub enum Expr {
     If { cond: Box<Expr>, expr1: Box<Expr>, expr2: Box<Expr> },
     And { args: Vec<Expr> },
     Or { args: Vec<Expr> },
+    Do { binds: Vec<(String, Expr, Expr)>, test: Box<Expr>, exprs: Vec<Expr>, body: Box<Expr> },
     Opr(&'static str),
     Num(f32),
     Bool(bool),

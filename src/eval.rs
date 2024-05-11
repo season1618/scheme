@@ -98,6 +98,28 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
             }
             Ok(Value::Bool(false))
         },
+        Do { binds, test, exprs, body } => {
+            let binds = binds.into_iter().map(|(ident, init, update)| (ident, eval(init, env), update)).collect::<Vec<_>>();
+            let env = &mut env.push_frame();
+            for (ident, init, _) in &binds {
+                env.add(ident.clone(), init.clone()?);
+            }
+
+            while eval(*test.clone(), env)? != Value::Bool(true) {
+                eval(*body.clone(), env)?;
+                for (ident, _, update) in &binds {
+                    let value = eval(update.clone(), env)?;
+                    env.set(ident.clone(), value);
+                }
+            }
+
+            let mut value = Value::Bool(true);
+            for expr in exprs {
+                value = eval(expr, env)?;
+            }
+
+            Ok(value)
+        },
         Apply { proc, args } => {
             let Proc(proc) = eval(*proc.clone(), env)? else {
                 return Err(format!("{:?} is not procedure", proc));
