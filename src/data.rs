@@ -158,7 +158,7 @@ impl Value {
             (Value::Num(lhs) , Value::Num(rhs) ) => lhs == rhs,
             (Value::Bool(lhs), Value::Bool(rhs)) => lhs == rhs,
             (Value::Str(lhs) , Value::Str(rhs) ) => Rc::ptr_eq(lhs, rhs),
-            (Value::Nil      , Value::Nil      ) => lhs == rhs,
+            (Value::Nil      , Value::Nil      ) => true,
             _ => false,
         }
     }
@@ -171,7 +171,7 @@ impl Value {
             (Value::Num(lhs) , Value::Num(rhs) ) => lhs == rhs,
             (Value::Bool(lhs), Value::Bool(rhs)) => lhs == rhs,
             (Value::Str(lhs) , Value::Str(rhs) ) => lhs == rhs,
-            (Value::Nil      , Value::Nil      ) => lhs == rhs,
+            (Value::Nil      , Value::Nil      ) => true,
             _ => false,
         }
     }
