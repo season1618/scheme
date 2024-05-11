@@ -25,7 +25,13 @@ pub enum TopLevel {
     Expr(Expr),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+pub struct Body {
+    pub defns: Vec<Defn>,
+    pub exprs: Vec<Expr>,
+}
+
+#[derive(Debug, Clone)]
 pub struct Defn {
     pub ident: String,
     pub expr: Expr,
@@ -34,10 +40,10 @@ pub struct Defn {
 #[derive(Debug, Clone)]
 pub enum Expr {
     Apply { proc: Box<Expr>, args: Vec<Expr> },
-    Lambda { params: Vec<String>, expr: Box<Expr> },
-    Let { binds: Vec<(String, Expr)>, expr: Box<Expr> },
-    LetStar { binds: Vec<(String, Expr)>, expr: Box<Expr> },
-    LetRec { binds: Vec<(String, Expr)>, expr: Box<Expr> },
+    Lambda { params: Vec<String>, body: Body },
+    Let { binds: Vec<(String, Expr)>, body: Body },
+    LetStar { binds: Vec<(String, Expr)>, body: Body },
+    LetRec { binds: Vec<(String, Expr)>, body: Body },
     Set { ident: String, expr: Box<Expr> },
     Var(String),
     Quote(Box<Value>),
@@ -67,7 +73,7 @@ pub enum Value {
 
 #[derive(Debug, Clone)]
 pub enum Proc {
-    Lambda { env: Env, params: Vec<String>, expr: Expr },
+    Lambda { env: Env, params: Vec<String>, body: Body },
     Opr(&'static str),
 }
 
@@ -75,10 +81,10 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Pair(pair) => write!(f, "({} . {})", pair.borrow().0, pair.borrow().1),
-            Proc(Proc::Lambda { env, params, expr }) => {
+            Proc(Proc::Lambda { env, params, body }) => {
                 write!(f, "env\n")?;
                 write!(f, "{}", env)?;
-                write!(f, "{:?} -> {:?}", params, expr)
+                write!(f, "{:?} -> {:?}", params, body)
             },
             Proc(Proc::Opr(opr)) => write!(f, "{:?}", opr),
             Symbol(symbol) => symbol.fmt(f),

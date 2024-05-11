@@ -1,4 +1,4 @@
-use crate::data::{TopLevel, Defn, Expr, Value, Proc, Env};
+use crate::data::{TopLevel, Body, Defn, Expr, Value, Proc, Env};
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -31,23 +31,23 @@ fn bind(defn: Defn, env: &mut Env) -> Result<(), String> {
 
 fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
     match expr {
-        Let { binds, expr } => {
+        Let { binds, body } => {
             let binds = binds.into_iter().map(|(ident, expr)| (ident, eval(expr, env))).collect::<Vec<_>>();
             let env = &mut env.push_frame();
             for (ident, value) in binds {
                 env.add(ident, value?);
             }
-            eval(*expr, env)
+            eval_body(body, env)
         },
-        LetStar { binds, expr } => {
+        LetStar { binds, body } => {
             let env = &mut env.push_frame();
             for (ident, expr) in binds {
                 let value = eval(expr, env)?;
                 env.add(ident, value);
             }
-            eval(*expr, env)
+            eval_body(body, env)
         },
-        LetRec { binds, expr } => {
+        LetRec { binds, body } => {
             let env = &mut env.push_frame();
             for (ident, _) in &binds {
                 env.add(ident.clone(), Value::Nil);
@@ -56,7 +56,7 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
                 let value = eval(expr, env)?;
                 env.set(&ident, value)?;
             }
-            eval(*expr, env)
+            eval_body(body, env)
         },
         Set { ident, expr } => {
             let value = eval(*expr, env)?;
@@ -142,22 +142,33 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
 
             match proc {
                 Proc::Opr(opr) => eval_opr(opr, args),
-                Proc::Lambda { env, params, expr } => {
+                Proc::Lambda { env, params, body } => {
                     let env = &mut env.push_frame();
                     for (param, arg) in params.into_iter().zip(args.into_iter()) {
                         env.add(param, arg);
                     }
-                    eval(expr, env)
+                    eval_body(body, env)
                 },
             }
         },
-        Lambda { params, expr } => Ok(Proc(Proc::Lambda { env: env.push_frame(), params, expr: *expr })),
+        Lambda { params, body } => Ok(Proc(Proc::Lambda { env: env.push_frame(), params, body })),
         Expr::Opr(opr) => Ok(Proc(Proc::Opr(opr))),
         Expr::Num(val) => Ok(Value::Num(val)),
         Expr::Bool(val) => Ok(Value::Bool(val)),
         Expr::Str(val) => Ok(Value::Str(Rc::new(val))),
         Expr::Nil => Ok(Value::Nil),
     }
+}
+
+fn eval_body(body: Body, env: &mut Env) -> Result<Value, String> {
+    let mut value = Value::Nil;
+    for defn in body.defns {
+        bind(defn, env)?;
+    }
+    for expr in body.exprs {
+        value = eval(expr, env)?;
+    }
+    Ok(value)
 }
 
 fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {

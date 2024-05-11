@@ -1,4 +1,4 @@
-use crate::data::{Token, TopLevel, Defn, Expr, Value};
+use crate::data::{Token, TopLevel, Body, Defn, Expr, Value};
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -42,6 +42,20 @@ impl<'a> Parser<'a> {
         })
     }
 
+    fn parse_body(&mut self) -> Result<Body, String> {
+        let mut defns = Vec::new();
+        let mut exprs = Vec::new();
+        while let Ok(defn) = self.parse_defn() {
+            defns.push(defn);
+        }
+        while let Ok(expr) = self.parse_expr() {
+            exprs.push(expr);
+        }
+        self.idx -= 1;
+
+        Ok(Body { defns, exprs })
+    }
+
     fn parse_defn(&mut self) -> Result<Defn, String> {
         if self.next_if(OpenParen) {
             if self.next_if(Keyword("define")) {
@@ -54,11 +68,11 @@ impl<'a> Parser<'a> {
                         params.push(param);
                     }
 
-                    let expr = self.parse_expr()?;
+                    let body = self.parse_body()?;
 
                     self.next_force(CloseParen)?;
 
-                    return Ok(Defn { ident, expr: Lambda { params, expr: Box::new(expr) }})
+                    return Ok(Defn { ident, expr: Lambda { params, body }})
                 } else {
                     let ident = self.next_ident()?;
                     let expr = self.parse_expr()?;
@@ -100,9 +114,9 @@ impl<'a> Parser<'a> {
                     }
                     self.next_force(CloseParen)?;
 
-                    let expr = self.parse_expr()?;
+                    let body = self.parse_body()?;
 
-                    Ok(Lambda { params, expr: Box::new(expr) })
+                    Ok(Lambda { params, body })
                 },
                 s if s == "let" || s == "let*" || s == "letrec" => {
                     let mut binds = Vec::new();
@@ -115,12 +129,12 @@ impl<'a> Parser<'a> {
                     }
                     self.next_force(CloseParen)?;
 
-                    let expr = self.parse_expr()?;
+                    let body = self.parse_body()?;
 
                     Ok(match s {
-                        "let" => Let { binds, expr: Box::new(expr) },
-                        "let*" => LetStar { binds, expr: Box::new(expr) },
-                        _ => LetRec { binds, expr: Box::new(expr) },
+                        "let" => Let { binds, body },
+                        "let*" => LetStar { binds, body },
+                        _ => LetRec { binds, body },
                     })
                 },
                 "set!" => {
