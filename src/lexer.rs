@@ -2,6 +2,27 @@ use crate::data::Token;
 
 use Token::*;
 
+const KEYWORDS: [&str; 13] = [
+    "define",
+    "lambda",
+    "let", "let*", "letrec",
+    "set!",
+    "begin",
+    "if", "cond",
+    "do",
+    "and", "or",
+    "quote",
+];
+const OPERATORS: [&str; 37] = [
+    "eq?", "neq?", "equal?",
+    "list?", "pair?", "procedure?", "symbol?", "number?", "boolean?", "string?", "null?", "procedure?",
+    "list", "length", "memq", "last", "append",
+    "cons", "car", "cdr", "set-car!", "set-cdr!",
+    "not",
+    "=", "<=", "<", ">=", ">", "+", "-", "*", "/",
+    "string-append", "symbol->string", "string->symbol", "number->string", "string->number"
+];
+
 pub fn tokenize(code: &str) -> Result<Vec<Token>, String> {
     let mut lexer = Lexer::new(code);
     lexer.tokenize()
@@ -82,9 +103,9 @@ impl<'a> Lexer<'a> {
             }
         };
 
-        if let Some(keyword) = ["define", "lambda", "let", "let*", "letrec", "set!", "quote", "begin", "if", "cond", "and", "or", "do"].iter().find(|&&keyword| keyword == prefix) {
+        if let Some(keyword) = KEYWORDS.iter().find(|&&keyword| keyword == prefix) {
             Ok(Keyword(keyword))
-        } else if let Some(operator) = ["cons", "car", "cdr", "set-car!", "set-cdr!", "not", "eq?", "neq?", "equal?", "list?", "pair?", "procedure?", "symbol?", "number?", "boolean?", "string?", "null?", "procedure?", "list", "length", "memq", "last", "append", "=", "<=", "<", ">=", ">", "+", "-", "*", "/", "string-append", "symbol->string", "string->symbol", "number->string", "string->number"].iter().find(|&&operator| operator == prefix) {
+        } else if let Some(operator) = OPERATORS.iter().find(|&&operator| operator == prefix) {
             Ok(Operator(operator))
         } else {
             Ok(Ident(prefix))
