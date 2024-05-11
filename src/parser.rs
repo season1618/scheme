@@ -45,11 +45,27 @@ impl<'a> Parser<'a> {
     fn parse_defn(&mut self) -> Result<Defn, String> {
         if self.next_if(OpenParen) {
             if self.next_if(Keyword("define")) {
-                let ident = self.next_ident()?;
-                let expr = self.parse_expr()?;
-                self.next_force(CloseParen)?;
+                if self.next_if(OpenParen) {
+                    let ident = self.next_ident()?;
 
-                return Ok(Defn { ident, expr });
+                    let mut params = Vec::new();
+                    while !self.next_if(CloseParen) {
+                        let param = self.next_ident()?;
+                        params.push(param);
+                    }
+
+                    let expr = self.parse_expr()?;
+
+                    self.next_force(CloseParen)?;
+
+                    return Ok(Defn { ident, expr: Lambda { params, expr: Box::new(expr) }})
+                } else {
+                    let ident = self.next_ident()?;
+                    let expr = self.parse_expr()?;
+                    self.next_force(CloseParen)?;
+
+                    return Ok(Defn { ident, expr });
+                }
             }
             self.idx -= 1;
         }
