@@ -80,9 +80,11 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
         },
         Cond { cond_then } => {
             for (cond, then) in cond_then {
-                if cond == Var("else".to_string()) {
-                    return eval(then, env);
-                } else if let Value::Bool(cond) = eval(cond.clone(), env)? {
+                match cond {
+                    Var(ident) if &ident == "else" => return eval(then, env),
+                    _ => {},
+                }
+                if let Value::Bool(cond) = eval(cond.clone(), env)? {
                     if cond { return eval(then, env); }
                 } else {
                     return Err(format!("{:?} is not condition", cond))

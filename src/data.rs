@@ -31,7 +31,7 @@ pub struct Defn {
     pub expr: Expr,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum Expr {
     Apply { proc: Box<Expr>, args: Vec<Expr> },
     Lambda { params: Vec<String>, expr: Box<Expr> },
@@ -54,7 +54,7 @@ pub enum Expr {
     Nil,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Pair(Rc<RefCell<(Value, Value)>>),
     Proc(Proc),
@@ -65,7 +65,7 @@ pub enum Value {
     Nil,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum Proc {
     Lambda { env: Env, params: Vec<String>, expr: Expr },
     Opr(&'static str),
@@ -87,6 +87,12 @@ impl fmt::Display for Value {
             Value::Str(val) => write!(f, "\"{}\"", val),
             Value::Nil => "()".fmt(f),
         }
+    }
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        Value::equal(self, other)
     }
 }
 
