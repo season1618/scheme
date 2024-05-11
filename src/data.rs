@@ -43,6 +43,7 @@ pub enum Expr {
     Quote(Box<Value>),
     Begin(Vec<Expr>),
     If { cond: Box<Expr>, expr1: Box<Expr>, expr2: Box<Expr> },
+    Cond { cond_then: Vec<(Expr, Expr)> },
     And { args: Vec<Expr> },
     Or { args: Vec<Expr> },
     Do { binds: Vec<(String, Expr, Expr)>, test: Box<Expr>, exprs: Vec<Expr>, body: Box<Expr> },

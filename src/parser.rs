@@ -130,6 +130,17 @@ impl<'a> Parser<'a> {
 
                     Ok(If { cond: Box::new(cond), expr1: Box::new(expr1), expr2: Box::new(expr2) })
                 },
+                "cond" => {
+                    let mut cond_then = Vec::new();
+                    while self.next_if(OpenParen) {
+                        let cond = self.parse_expr()?;
+                        let then = self.parse_expr()?;
+                        cond_then.push((cond, then));
+                        self.next_force(CloseParen)?;
+                    }
+                    
+                    Ok(Cond { cond_then })
+                },
                 "and" => {
                     let mut args = Vec::new();
                     while !self.peek_if(CloseParen) {
