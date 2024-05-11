@@ -13,14 +13,15 @@ const KEYWORDS: [&str; 13] = [
     "and", "or",
     "quote",
 ];
-const OPERATORS: [&str; 37] = [
+const OPERATORS: [&str; 38] = [
     "eq?", "neq?", "equal?",
     "list?", "pair?", "procedure?", "symbol?", "number?", "boolean?", "string?", "null?", "procedure?",
     "list", "length", "memq", "last", "append",
     "cons", "car", "cdr", "set-car!", "set-cdr!",
     "not",
     "=", "<=", "<", ">=", ">", "+", "-", "*", "/",
-    "string-append", "symbol->string", "string->symbol", "number->string", "string->number"
+    "string-append", "symbol->string", "string->symbol", "number->string", "string->number",
+    "print",
 ];
 
 pub fn tokenize(code: &str) -> Result<Vec<Token>, String> {
