@@ -1,7 +1,7 @@
 mod data;
 mod lexer;
 mod parser;
-mod eval;
+mod exec;
 
 use std::io::{stdin, stdout, Write};
 use std::env;
@@ -10,7 +10,7 @@ use std::fs;
 use crate::data::Env;
 use crate::lexer::tokenize;
 use crate::parser::parse;
-use crate::eval::{exec, exec_line};
+use crate::exec::{exec, exec_line};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
