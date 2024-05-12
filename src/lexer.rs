@@ -39,7 +39,7 @@ impl<'a> Lexer<'a> {
         Lexer { chs: code }
     }
 
-    fn tokenize(&mut self) -> Result<Vec<Token<'a>>, String> {
+    fn tokenize(&mut self) -> Result<Vec<Token>, String> {
         let mut tokens = Vec::new();
         while let Some(c) = self.peek_char() {
             if c.is_whitespace() {
@@ -93,7 +93,7 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
-    fn read_keyword_ident(&mut self) -> Result<Token<'a>, String> {
+    fn read_keyword_ident(&mut self) -> Result<Token, String> {
         let mut chs = self.chs.char_indices();
         let prefix;
         (prefix, self.chs) = loop {
@@ -109,11 +109,11 @@ impl<'a> Lexer<'a> {
         } else if let Some(operator) = OPERATORS.iter().find(|&&operator| operator == prefix) {
             Ok(Operator(operator))
         } else {
-            Ok(Ident(prefix))
+            Ok(Ident(prefix.to_string()))
         }
     }
 
-    fn read_string(&mut self) -> Result<Token<'a>, String> {
+    fn read_string(&mut self) -> Result<Token, String> {
         self.next_char();
 
         let mut s = String::new();
@@ -127,7 +127,7 @@ impl<'a> Lexer<'a> {
         Err(String::from("expect '\"'"))
     }
 
-    fn read_num(&mut self) -> Token<'a> {
+    fn read_num(&mut self) -> Token {
         let mut val = 0;
         while let Some(c) = self.peek_char() {
             if let Some(d) = c.to_digit(10) {

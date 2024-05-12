@@ -7,18 +7,18 @@ use Token::*;
 use Expr::*;
 use Value::*;
 
-pub fn parse<'a>(tokens: Vec<Token<'a>>) -> Result<Vec<TopLevel>, String> {
+pub fn parse(tokens: Vec<Token>) -> Result<Vec<TopLevel>, String> {
     let mut parser = Parser::new(tokens);
     parser.parse()
 }
 
-struct Parser<'a> {
-    tokens: Vec<Token<'a>>,
+struct Parser {
+    tokens: Vec<Token>,
     idx: usize,
 }
 
-impl<'a> Parser<'a> {
-    fn new(tokens: Vec<Token<'a>>) -> Self {
+impl<'a> Parser {
+    fn new(tokens: Vec<Token>) -> Self {
         Parser {
             tokens,
             idx: 0,
@@ -95,7 +95,7 @@ impl<'a> Parser<'a> {
             },
             SingleQuote => Ok(Quote(Box::new(self.parse_s_expr()?))),
             Operator(operator) => Ok(Opr(operator)),
-            Token::Ident(ident) => Ok(Var(ident.to_string())),
+            Token::Ident(ident) => Ok(Var(ident)),
             Token::Num(val) => Ok(Expr::Num(val)),
             Token::Bool(val) => Ok(Expr::Bool(val)),
             Token::Str(val) => Ok(Expr::Str(val)),
@@ -250,11 +250,11 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn peek_if(&self, expected: Token<'a>) -> bool {
+    fn peek_if(&self, expected: Token) -> bool {
         self.idx < self.tokens.len() && self.tokens[self.idx] == expected
     }
 
-    fn next_if(&mut self, expected: Token<'a>) -> bool {
+    fn next_if(&mut self, expected: Token) -> bool {
         if self.idx < self.tokens.len() {
             if self.tokens[self.idx] == expected {
                 self.idx += 1;
@@ -267,7 +267,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn next_force(&mut self, expected: Token<'a>) -> Result<(), String> {
+    fn next_force(&mut self, expected: Token) -> Result<(), String> {
         let actual = self.next_token()?;
         if expected == actual {
             Ok(())
@@ -294,7 +294,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn peek_token(&self) -> Result<Token<'a>, String> {
+    fn peek_token(&self) -> Result<Token, String> {
         if self.idx < self.tokens.len() {
             let token = self.tokens[self.idx].clone();
             Ok(token)
@@ -303,7 +303,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn next_token(&mut self) -> Result<Token<'a>, String> {
+    fn next_token(&mut self) -> Result<Token, String> {
         if self.idx < self.tokens.len() {
             let token = self.tokens[self.idx].clone();
             self.idx += 1;
