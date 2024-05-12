@@ -1,8 +1,16 @@
-use std::fmt;
-use std::cmp::Ordering;
-use std::ops::{Add, Sub, Mul, Div};
-use std::rc::Rc;
-use std::cell::RefCell;
+use core::{
+    cell::RefCell,
+    cmp::Ordering,
+    fmt,
+    ops::{Add, Sub, Mul, Div},
+};
+use alloc::{
+    boxed::Box,
+    rc::Rc,
+    string::{String, ToString},
+    vec::Vec,
+};
+use alloc::format;
 
 use Value::*;
 

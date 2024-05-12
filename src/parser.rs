@@ -1,7 +1,13 @@
 use crate::data::{Token, TopLevel, Body, Defn, Expr, Value};
 
-use std::rc::Rc;
-use std::cell::RefCell;
+use core::cell::RefCell;
+use alloc::{
+    boxed::Box,
+    rc::Rc,
+    string::{String, ToString},
+    vec::Vec,
+};
+use alloc::format;
 
 use Token::*;
 use Expr::*;

@@ -1,5 +1,11 @@
 use crate::data::Token;
 
+use alloc::{
+    string::{String, ToString},
+    vec::Vec,
+};
+use alloc::format;
+
 use Token::*;
 
 const KEYWORDS: [&str; 13] = [

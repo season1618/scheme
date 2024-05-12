@@ -1,7 +1,12 @@
 use crate::data::{TopLevel, Body, Defn, Expr, Value, Proc, Env};
 
-use std::rc::Rc;
-use std::cell::RefCell;
+use core::cell::RefCell;
+use alloc::{
+    rc::Rc,
+    string::String,
+    vec::Vec,
+};
+use alloc::format;
 
 use Expr::*;
 use Value::*;
@@ -17,7 +22,7 @@ pub fn exec(nodes: Vec<TopLevel>) -> Result<(), String> {
 pub fn exec_line(node: TopLevel, env: &mut Env) -> Result<(), String> {
     match node {
         TopLevel::Defn(defn) => bind(defn, env)?,
-        TopLevel::Expr(expr) => println!("{}", eval(expr, env)?),
+        TopLevel::Expr(expr) => { eval(expr, env)?; todo!(); },
     }
     Ok(())
 }
@@ -258,13 +263,7 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
         ("string->symbol", 1) => args[0].string_to_symbol(),
         ("number->string", 1) => args[0].number_to_string(),
         ("string->number", 1) => args[0].string_to_number(),
-        ("print", _) => {
-            for arg in args {
-                print!("{} ", arg);
-            }
-            println!("");
-            Ok(Value::Nil)
-        },
+        ("print", _) => todo!(),
         (_, n) => Err(format!("the number of argments is not {n}")),
     }
 }
