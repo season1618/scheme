@@ -25,7 +25,7 @@ pub fn exec_line(node: TopLevel, env: &mut Env) -> Result<(), String> {
 fn bind(defn: Defn, env: &mut Env) -> Result<(), String> {
     let Defn { ident, expr } = defn;
     let value = eval(expr, env)?;
-    env.add(ident, value);
+    env.add(&ident, value);
     Ok(())
 }
 
@@ -35,7 +35,7 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
             let binds = binds.into_iter().map(|(ident, expr)| (ident, eval(expr, env))).collect::<Vec<_>>();
             let env = &mut env.push_frame();
             for (ident, value) in binds {
-                env.add(ident, value?);
+                env.add(&ident, value?);
             }
             eval_body(body, env)
         },
@@ -43,14 +43,14 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
             let env = &mut env.push_frame();
             for (ident, expr) in binds {
                 let value = eval(expr, env)?;
-                env.add(ident, value);
+                env.add(&ident, value);
             }
             eval_body(body, env)
         },
         LetRec { binds, body } => {
             let env = &mut env.push_frame();
             for (ident, _) in &binds {
-                env.add(ident.clone(), Value::Nil);
+                env.add(ident, Value::Nil);
             }
             for (ident, expr) in binds {
                 let value = eval(expr, env)?;
@@ -116,7 +116,7 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
             let binds = binds.into_iter().map(|(ident, init, update)| (ident, eval(init, env), update)).collect::<Vec<_>>();
             let env = &mut env.push_frame();
             for (ident, init, _) in &binds {
-                env.add(ident.clone(), init.clone()?);
+                env.add(ident, init.clone()?);
             }
 
             while eval(*test.clone(), env)? != Value::Bool(true) {
@@ -145,7 +145,7 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
                 Proc::Lambda { env, params, body } => {
                     let env = &mut env.push_frame();
                     for (param, arg) in params.into_iter().zip(args.into_iter()) {
-                        env.add(param, arg);
+                        env.add(&param, arg);
                     }
                     eval_body(body, env)
                 },

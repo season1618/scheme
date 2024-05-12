@@ -325,8 +325,8 @@ impl Env {
         )))
     }
 
-    pub fn add(&self, ident: String, value: Value) {
-        self.0.borrow_mut().0.push((ident, value));
+    pub fn add(&self, ident: &String, value: Value) {
+        self.0.borrow_mut().0.push((ident.clone(), value));
     }
 
     pub fn find(&self, expected: &String) -> Result<Value, String> {
