@@ -294,7 +294,7 @@ impl Value {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Env(Rc<RefCell<(Vec<(String, Value)>, Option<Env>)>>);
 
 impl fmt::Display for Env {
