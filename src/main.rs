@@ -16,12 +16,15 @@ use alloc::{
     string::String,
 };
 
+use crate::embedded::init_heap;
 use crate::lexer::tokenize;
 use crate::parser::parse;
 use crate::exec::exec;
 
 #[entry]
 fn main() -> ! {
+    init_heap();
+
     interprete().unwrap();
     loop {}
 }
