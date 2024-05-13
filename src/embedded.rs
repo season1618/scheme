@@ -1,3 +1,4 @@
+use esp_println::println;
 use core::{
     alloc::GlobalAlloc,
     cell::UnsafeCell,
@@ -41,5 +42,6 @@ static HEAP: BumpPointerAlloc = BumpPointerAlloc {
 
 #[panic_handler]
 fn panic(_panic: &PanicInfo<'_>) -> ! {
+    println!("{_panic}");
     loop {}
 }
