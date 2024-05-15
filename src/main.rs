@@ -3,6 +3,7 @@
 
 extern crate alloc;
 
+mod m5core2;
 mod embedded;
 mod data;
 mod lexer;
@@ -12,10 +13,12 @@ mod exec;
 use esp32_hal::{
     prelude::entry,
 };
+use esp_println::println;
 use alloc::{
     string::String,
 };
 
+use crate::m5core2::{m5core2_new, read_line};
 use crate::embedded::init_heap;
 use crate::lexer::tokenize;
 use crate::parser::parse;
@@ -25,8 +28,15 @@ use crate::exec::exec;
 fn main() -> ! {
     init_heap();
 
+    let mut uart = m5core2_new();
+
     interprete().unwrap();
-    loop {}
+
+    let buf: &mut [u8] = &mut [0; 128];
+    loop {
+        let msg = read_line(&mut uart, buf);
+        println!("{}", msg);
+    }
 }
 
 fn interprete() -> Result<(), String> {
