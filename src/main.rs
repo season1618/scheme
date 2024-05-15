@@ -34,7 +34,7 @@ fn main() -> ! {
 
     let buf: &mut [u8] = &mut [0; 128];
     loop {
-        let msg = read_line(&mut uart, buf);
+        let msg = read_line(&mut uart, buf).unwrap();
         println!("{}", msg);
     }
 }
