@@ -18,7 +18,6 @@ use alloc::{
 
 use crate::m5core2::{
     M5Core2,
-    m5core2_new,
     read_line,
     write,
     accel, gyro, temp,
@@ -33,7 +32,7 @@ use crate::exec::{exec, exec_line};
 fn main() -> ! {
     init_heap();
 
-    let mut m5core2 = m5core2_new();
+    let mut m5core2 = M5Core2::new();
 
     write(&mut m5core2.lcd, "Scheme").unwrap();
 
