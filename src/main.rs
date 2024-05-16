@@ -51,7 +51,7 @@ fn main() -> ! {
     }
 }
 
-fn repl<'a>(m5core2: &mut M5Core2) -> Result<(), String> {
+fn repl(m5core2: &mut M5Core2) -> Result<(), String> {
     let buf: &mut [u8] = &mut [0; 128];
     let mut env = Env::new();
     loop {
