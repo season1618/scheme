@@ -20,7 +20,12 @@ use alloc::{
     string::String,
 };
 
-use crate::m5core2::{m5core2_new, read_line, write};
+use crate::m5core2::{
+    m5core2_new,
+    read_line,
+    write,
+    accel, gyro, temp,
+};
 use crate::embedded::init_heap;
 use crate::data::Env;
 use crate::lexer::tokenize;
@@ -31,9 +36,17 @@ use crate::exec::{exec, exec_line};
 fn main() -> ! {
     init_heap();
 
-    let (mut uart, mut lcd) = m5core2_new();
+    let (mut uart, mut imu, mut lcd) = m5core2_new();
 
     write(&mut lcd, "Scheme").unwrap();
+
+    let accel = accel(&mut imu);
+    let gyro = gyro(&mut imu);
+    let temp = temp(&mut imu);
+
+    println!("accel (g m / s^2): {:5.2?}", accel);
+    println!("gyro (degree / s): {:5.2?}", gyro);
+    println!("temp  (degree C) : {}", temp);
 
     interprete().unwrap();
 

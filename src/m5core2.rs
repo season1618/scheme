@@ -1,16 +1,18 @@
 pub mod uart;
+pub mod imu;
 pub mod lcd;
 mod pmu;
 
 pub use uart::read_line;
 pub use lcd::write;
+pub use imu::{accel, gyro, temp};
 
 use esp32_hal::{
     clock::ClockControl,
     delay::Delay,
     gpio::{AnyPin, Gpio15, IO, Output, PushPull},
     i2c::I2C,
-    peripherals::{Peripherals, SPI2, UART0},
+    peripherals::{I2C0, Peripherals, SPI2, UART0},
     prelude::*,
     spi::{FullDuplexMode, Spi, SpiMode},
     uart::{TxRxPins, Uart}
@@ -25,8 +27,9 @@ use mipidsi::{
 };
 
 use pmu::pmu_init;
+use imu::imu_init;
 
-pub fn m5core2_new<'a, >() -> (Uart<'a, UART0>, Display<SPIInterfaceNoCS<Spi<'a, SPI2, FullDuplexMode>, Gpio15<Output<PushPull>>>, ILI9342CRgb666, AnyPin<Output<PushPull>>>) {
+pub fn m5core2_new<'a>() -> (Uart<'a, UART0>, &'a mut I2C<'a, I2C0>, Display<SPIInterfaceNoCS<Spi<'a, SPI2, FullDuplexMode>, Gpio15<Output<PushPull>>>, ILI9342CRgb666, AnyPin<Output<PushPull>>>) {
     let peripherals = Peripherals::take();
     let mut system = peripherals.DPORT.split();
     let mut clocks = ClockControl::max(system.clock_control).freeze();
@@ -46,7 +49,7 @@ pub fn m5core2_new<'a, >() -> (Uart<'a, UART0>, Display<SPIInterfaceNoCS<Spi<'a,
         &mut system.peripheral_clock_control,
     );
 
-    let i2c = I2C::new(
+    let mut i2c = I2C::new(
         peripherals.I2C0,
         io.pins.gpio21,
         io.pins.gpio22,
@@ -54,6 +57,10 @@ pub fn m5core2_new<'a, >() -> (Uart<'a, UART0>, Display<SPIInterfaceNoCS<Spi<'a,
         &mut system.peripheral_clock_control,
         &clocks,
     );
+
+    let i2c_ptr = &mut i2c as *mut I2C<_>;
+    let mut imu = unsafe { &mut *i2c_ptr as &mut I2C<_> };
+    imu_init(&mut imu, &mut delay).unwrap();
 
     let mut pmu = Axp192::new(i2c);
     pmu_init(&mut pmu, &mut delay).unwrap();
@@ -77,5 +84,5 @@ pub fn m5core2_new<'a, >() -> (Uart<'a, UART0>, Display<SPIInterfaceNoCS<Spi<'a,
         .init(&mut delay, None::<AnyPin<Output<PushPull>>>)
         .unwrap();
 
-    (uart, lcd)
+    (uart, imu, lcd)
 }
