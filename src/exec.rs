@@ -7,51 +7,52 @@ use alloc::{
     string::String,
     vec::Vec,
 };
-use alloc::format;
+use alloc::{format, vec};
 
+use crate::m5core2::{M5Core2, accel, gyro, temp};
 use Expr::*;
 use Value::*;
 
-pub fn exec(nodes: Vec<TopLevel>) -> Result<(), String> {
+pub fn exec(nodes: Vec<TopLevel>, m5core2: &mut M5Core2) -> Result<(), String> {
     let mut env = Env::new();
     for node in nodes {
-        exec_line(node, &mut env)?;
+        exec_line(node, &mut env, m5core2)?;
     }
     Ok(())
 }
 
-pub fn exec_line(node: TopLevel, env: &mut Env) -> Result<(), String> {
+pub fn exec_line(node: TopLevel, env: &mut Env, m5core2: &mut M5Core2) -> Result<(), String> {
     match node {
-        TopLevel::Defn(defn) => bind(defn, env)?,
-        TopLevel::Expr(expr) => println!("{}", eval(expr, env)?),
+        TopLevel::Defn(defn) => bind(defn, env, m5core2)?,
+        TopLevel::Expr(expr) => println!("{}", eval(expr, env, m5core2)?),
     }
     Ok(())
 }
 
-fn bind(defn: Defn, env: &mut Env) -> Result<(), String> {
+fn bind(defn: Defn, env: &mut Env, m5core2: &mut M5Core2) -> Result<(), String> {
     let Defn { ident, expr } = defn;
-    let value = eval(expr, env)?;
+    let value = eval(expr, env, m5core2)?;
     env.add(&ident, value);
     Ok(())
 }
 
-fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
+fn eval(expr: Expr, env: &mut Env, m5core2: &mut M5Core2) -> Result<Value, String> {
     match expr {
         Let { binds, body } => {
-            let binds = binds.into_iter().map(|(ident, expr)| (ident, eval(expr, env))).collect::<Vec<_>>();
+            let binds = binds.into_iter().map(|(ident, expr)| (ident, eval(expr, env, m5core2))).collect::<Vec<_>>();
             let env = &mut env.push_frame();
             for (ident, value) in binds {
                 env.add(&ident, value?);
             }
-            eval_body(body, env)
+            eval_body(body, env, m5core2)
         },
         LetStar { binds, body } => {
             let env = &mut env.push_frame();
             for (ident, expr) in binds {
-                let value = eval(expr, env)?;
+                let value = eval(expr, env, m5core2)?;
                 env.add(&ident, value);
             }
-            eval_body(body, env)
+            eval_body(body, env, m5core2)
         },
         LetRec { binds, body } => {
             let env = &mut env.push_frame();
@@ -59,13 +60,13 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
                 env.add(ident, Value::Nil);
             }
             for (ident, expr) in binds {
-                let value = eval(expr, env)?;
+                let value = eval(expr, env, m5core2)?;
                 env.set(&ident, value)?;
             }
-            eval_body(body, env)
+            eval_body(body, env, m5core2)
         },
         Set { ident, expr } => {
-            let value = eval(*expr, env)?;
+            let value = eval(*expr, env, m5core2)?;
             env.set(&ident, value)
         },
         Var(ident) => env.find(&ident),
@@ -73,13 +74,13 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
         Begin(exprs) => {
             let mut value = Value::Nil;
             for expr in exprs {
-                value = eval(expr, env)?;
+                value = eval(expr, env, m5core2)?;
             }
             Ok(value)
         },
         If { cond, expr1, expr2 } => {
-            if let Value::Bool(cond) = eval(*cond.clone(), env)? {
-                if cond { eval(*expr1, env) } else { eval(*expr2, env) }
+            if let Value::Bool(cond) = eval(*cond.clone(), env, m5core2)? {
+                if cond { eval(*expr1, env, m5core2) } else { eval(*expr2, env, m5core2) }
             } else {
                 Err(format!("{:?} is not condition", *cond))
             }
@@ -87,11 +88,11 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
         Cond { cond_then } => {
             for (cond, then) in cond_then {
                 match cond {
-                    Var(ident) if &ident == "else" => return eval(then, env),
+                    Var(ident) if &ident == "else" => return eval(then, env, m5core2),
                     _ => {},
                 }
-                if let Value::Bool(cond) = eval(cond.clone(), env)? {
-                    if cond { return eval(then, env); }
+                if let Value::Bool(cond) = eval(cond.clone(), env, m5core2)? {
+                    if cond { return eval(then, env, m5core2); }
                 } else {
                     return Err(format!("{:?} is not condition", cond))
                 }
@@ -100,7 +101,7 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
         },
         And { args } => {
             for arg in args {
-                match eval(arg, env)? {
+                match eval(arg, env, m5core2)? {
                     Value::Bool(true) => {},
                     Value::Bool(false) => return Ok(Value::Bool(false)),
                     _ => return Err(String::from("not boolean")),
@@ -110,7 +111,7 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
         },
         Or { args } => {
             for arg in args {
-                match eval(arg, env)? {
+                match eval(arg, env, m5core2)? {
                     Value::Bool(true) => return Ok(Value::Bool(true)),
                     Value::Bool(false) => {},
                     _ => return Err(String::from("not boolean")),
@@ -119,41 +120,41 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
             Ok(Value::Bool(false))
         },
         Do { binds, test, exprs, body } => {
-            let binds = binds.into_iter().map(|(ident, init, update)| (ident, eval(init, env), update)).collect::<Vec<_>>();
+            let binds = binds.into_iter().map(|(ident, init, update)| (ident, eval(init, env, m5core2), update)).collect::<Vec<_>>();
             let env = &mut env.push_frame();
             for (ident, init, _) in &binds {
                 env.add(ident, init.clone()?);
             }
 
-            while eval(*test.clone(), env)? != Value::Bool(true) {
-                eval(*body.clone(), env)?;
+            while eval(*test.clone(), env, m5core2)? != Value::Bool(true) {
+                eval(*body.clone(), env, m5core2)?;
                 for (ident, _, update) in &binds {
-                    let value = eval(update.clone(), env)?;
+                    let value = eval(update.clone(), env, m5core2)?;
                     env.set(ident, value)?;
                 }
             }
 
             let mut value = Value::Bool(true);
             for expr in exprs {
-                value = eval(expr, env)?;
+                value = eval(expr, env, m5core2)?;
             }
 
             Ok(value)
         },
         Apply { proc, args } => {
-            let Proc(proc) = eval(*proc.clone(), env)? else {
+            let Proc(proc) = eval(*proc.clone(), env, m5core2)? else {
                 return Err(format!("{:?} is not procedure", proc));
             };
-            let args = args.into_iter().map(|arg| eval(arg, env)).collect::<Result<_, _>>()?;
+            let args = args.into_iter().map(|arg| eval(arg, env, m5core2)).collect::<Result<_, _>>()?;
 
             match proc {
-                Proc::Opr(opr) => eval_opr(opr, args),
+                Proc::Opr(opr) => eval_opr(opr, args, m5core2),
                 Proc::Lambda { env, params, body } => {
                     let env = &mut env.push_frame();
                     for (param, arg) in params.into_iter().zip(args.into_iter()) {
                         env.add(&param, arg);
                     }
-                    eval_body(body, env)
+                    eval_body(body, env, m5core2)
                 },
             }
         },
@@ -166,18 +167,18 @@ fn eval(expr: Expr, env: &mut Env) -> Result<Value, String> {
     }
 }
 
-fn eval_body(body: Body, env: &mut Env) -> Result<Value, String> {
+fn eval_body(body: Body, env: &mut Env, m5core2: &mut M5Core2) -> Result<Value, String> {
     let mut value = Value::Nil;
     for defn in body.defns {
-        bind(defn, env)?;
+        bind(defn, env, m5core2)?;
     }
     for expr in body.exprs {
-        value = eval(expr, env)?;
+        value = eval(expr, env, m5core2)?;
     }
     Ok(value)
 }
 
-fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
+fn eval_opr(operator: &'static str, args: Vec<Value>, m5core2: &mut M5Core2) -> Result<Value, String> {
     match (operator, args.len()) {
         ("cons", 2) => Ok(Pair(Rc::new(RefCell::new((args[0].clone(), args[1].clone()))))),
         ("car" , 1) => {
@@ -270,6 +271,18 @@ fn eval_opr(operator: &'static str, args: Vec<Value>) -> Result<Value, String> {
             }
             println!("");
             Ok(Value::Nil)
+        },
+        ("accel", 0) => {
+            let accel = accel(&mut m5core2.imu);
+            Ok(Value::list(vec![Value::Num(accel.0), Value::Num(accel.1), Value::Num(accel.2)]))
+        },
+        ("gyro", 0) => {
+            let gyro = gyro(&mut m5core2.imu);
+            Ok(Value::list(vec![Value::Num(gyro.0), Value::Num(gyro.1), Value::Num(gyro.2)]))
+        },
+        ("temp", 0) => {
+            let temp = temp(&mut m5core2.imu);
+            Ok(Value::Num(temp))
         },
         (_, n) => Err(format!("the number of argments is not {n}")),
     }

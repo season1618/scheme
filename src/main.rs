@@ -45,7 +45,7 @@ fn main() -> ! {
     println!("gyro (degree / s): {:5.2?}", gyro);
     println!("temp  (degree C) : {}", temp);
 
-    interprete().unwrap();
+    interprete(&mut m5core2).unwrap();
 
     loop {
         repl(&mut m5core2).unwrap();
@@ -68,7 +68,7 @@ fn repl<'a>(m5core2: &mut M5Core2) -> Result<(), String> {
                 } else {
                     let nodes = parse(tokens)?;
                     for node in nodes {
-                        match exec_line(node, &mut env) {
+                        match exec_line(node, &mut env, m5core2) {
                             Ok(()) => {},
                             Err(err) => println!("{err}"),
                         }
@@ -80,9 +80,9 @@ fn repl<'a>(m5core2: &mut M5Core2) -> Result<(), String> {
     }
 }
 
-fn interprete() -> Result<(), String> {
+fn interprete(m5core2: &mut M5Core2) -> Result<(), String> {
     let code = "";
     let tokens = tokenize(code)?;
     let nodes = parse(tokens)?;
-    exec(nodes)
+    exec(nodes, m5core2)
 }
