@@ -29,7 +29,13 @@ use mipidsi::{
 use pmu::pmu_init;
 use imu::imu_init;
 
-pub fn m5core2_new<'a>() -> (Uart<'a, UART0>, &'a mut I2C<'a, I2C0>, Display<SPIInterfaceNoCS<Spi<'a, SPI2, FullDuplexMode>, Gpio15<Output<PushPull>>>, ILI9342CRgb666, AnyPin<Output<PushPull>>>) {
+pub struct M5Core2<'a> {
+    pub uart: Uart<'a, UART0>,
+    pub imu: &'a mut I2C<'a, I2C0>,
+    pub lcd: Display<SPIInterfaceNoCS<Spi<'a, SPI2, FullDuplexMode>, Gpio15<Output<PushPull>>>, ILI9342CRgb666, AnyPin<Output<PushPull>>>,
+}
+
+pub fn m5core2_new<'a>() -> M5Core2<'a> {
     let peripherals = Peripherals::take();
     let mut system = peripherals.DPORT.split();
     let mut clocks = ClockControl::max(system.clock_control).freeze();
@@ -84,5 +90,5 @@ pub fn m5core2_new<'a>() -> (Uart<'a, UART0>, &'a mut I2C<'a, I2C0>, Display<SPI
         .init(&mut delay, None::<AnyPin<Output<PushPull>>>)
         .unwrap();
 
-    (uart, imu, lcd)
+    M5Core2 { uart, imu, lcd }
 }

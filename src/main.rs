@@ -10,17 +10,14 @@ mod lexer;
 mod parser;
 mod exec;
 
-use esp32_hal::{
-    peripherals::UART0,
-    prelude::entry,
-    uart::Uart,
-};
+use esp32_hal::prelude::entry;
 use esp_println::{print, println};
 use alloc::{
     string::String,
 };
 
 use crate::m5core2::{
+    M5Core2,
     m5core2_new,
     read_line,
     write,
@@ -36,13 +33,13 @@ use crate::exec::{exec, exec_line};
 fn main() -> ! {
     init_heap();
 
-    let (mut uart, mut imu, mut lcd) = m5core2_new();
+    let mut m5core2 = m5core2_new();
 
-    write(&mut lcd, "Scheme").unwrap();
+    write(&mut m5core2.lcd, "Scheme").unwrap();
 
-    let accel = accel(&mut imu);
-    let gyro = gyro(&mut imu);
-    let temp = temp(&mut imu);
+    let accel = accel(&mut m5core2.imu);
+    let gyro = gyro(&mut m5core2.imu);
+    let temp = temp(&mut m5core2.imu);
 
     println!("accel (g m / s^2): {:5.2?}", accel);
     println!("gyro (degree / s): {:5.2?}", gyro);
@@ -51,17 +48,18 @@ fn main() -> ! {
     interprete().unwrap();
 
     loop {
-        repl(&mut uart).unwrap();
+        repl(&mut m5core2).unwrap();
     }
 }
 
-fn repl<'a>(uart: &mut Uart<'a, UART0>) -> Result<(), String> {
+fn repl<'a>(m5core2: &mut M5Core2) -> Result<(), String> {
     let buf: &mut [u8] = &mut [0; 128];
     let mut env = Env::new();
     loop {
         print!("> ");
 
-        match read_line(uart, buf) {
+        let line = read_line(&mut m5core2.uart, buf);
+        match line {
             Ok("") => break Ok(()),
             Ok(code) => {
                 let tokens = tokenize(&code)?;
