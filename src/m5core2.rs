@@ -29,6 +29,7 @@ pub struct M5Core2<'a> {
     uart: Uart<'a, UART0>,
     imu: &'a mut I2C<'a, I2C0>,
     lcd: Display<SPIInterfaceNoCS<Spi<'a, SPI2, FullDuplexMode>, Gpio15<Output<PushPull>>>, ILI9342CRgb666, AnyPin<Output<PushPull>>>,
+    line: usize,
 }
 
 impl<'a> M5Core2<'a> {
@@ -87,6 +88,6 @@ impl<'a> M5Core2<'a> {
             .init(&mut delay, None::<AnyPin<Output<PushPull>>>)
             .unwrap();
 
-        M5Core2 { uart, imu, lcd }
+        M5Core2 { uart, imu, lcd, line: 0 }
     }
 }
