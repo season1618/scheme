@@ -26,9 +26,9 @@ use pmu::pmu_init;
 use imu::imu_init;
 
 pub struct M5Core2<'a> {
-    pub uart: Uart<'a, UART0>,
-    pub imu: &'a mut I2C<'a, I2C0>,
-    pub lcd: Display<SPIInterfaceNoCS<Spi<'a, SPI2, FullDuplexMode>, Gpio15<Output<PushPull>>>, ILI9342CRgb666, AnyPin<Output<PushPull>>>,
+    uart: Uart<'a, UART0>,
+    imu: &'a mut I2C<'a, I2C0>,
+    lcd: Display<SPIInterfaceNoCS<Spi<'a, SPI2, FullDuplexMode>, Gpio15<Output<PushPull>>>, ILI9342CRgb666, AnyPin<Output<PushPull>>>,
 }
 
 impl<'a> M5Core2<'a> {
