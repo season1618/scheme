@@ -1,11 +1,7 @@
-pub mod uart;
-pub mod imu;
-pub mod lcd;
+mod uart;
+mod imu;
 mod pmu;
-
-pub use uart::read_line;
-pub use lcd::draw;
-pub use imu::{accel, gyro, temp};
+mod lcd;
 
 use esp32_hal::{
     clock::ClockControl,

@@ -16,12 +16,7 @@ use alloc::{
     string::String,
 };
 
-use crate::m5core2::{
-    M5Core2,
-    read_line,
-    draw,
-    accel, gyro, temp,
-};
+use crate::m5core2::M5Core2;
 use crate::embedded::init_heap;
 use crate::data::Env;
 use crate::lexer::tokenize;
@@ -34,11 +29,11 @@ fn main() -> ! {
 
     let mut m5core2 = M5Core2::new();
 
-    draw(&mut m5core2.lcd, "Scheme").unwrap();
+    m5core2.draw("Scheme").unwrap();
 
-    let accel = accel(&mut m5core2.imu);
-    let gyro = gyro(&mut m5core2.imu);
-    let temp = temp(&mut m5core2.imu);
+    let accel = m5core2.accel();
+    let gyro = m5core2.gyro();
+    let temp = m5core2.temp();
 
     println!("accel (g m / s^2): {:5.2?}", accel);
     println!("gyro (degree / s): {:5.2?}", gyro);
@@ -57,7 +52,7 @@ fn repl(m5core2: &mut M5Core2) {
     loop {
         print!("> ");
 
-        let line = read_line(&mut m5core2.uart, buf);
+        let line = m5core2.read_line(buf);
         match line {
             Ok("") => break,
             Ok(code) => {

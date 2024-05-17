@@ -604,6 +604,7 @@ name = "scheme-processor"
 version = "0.1.0"
 dependencies = [
  "axp192",
+ "display-interface",
  "display-interface-spi",
  "embedded-graphics",
  "embedded-hal",

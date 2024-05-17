@@ -9,7 +9,7 @@ use alloc::{
 };
 use alloc::{format, vec};
 
-use crate::m5core2::{M5Core2, draw, accel, gyro, temp};
+use crate::m5core2::M5Core2;
 use Expr::*;
 use Value::*;
 
@@ -274,20 +274,20 @@ fn eval_opr(operator: &'static str, args: Vec<Value>, m5core2: &mut M5Core2) -> 
         },
         ("draw", _) => {
             for arg in args {
-                draw(&mut m5core2.lcd, &arg.to_string()).expect("failed to draw lcd");
+                m5core2.draw(&arg.to_string()).expect("failed to draw lcd");
             }
             Ok(Value::Nil)
         },
         ("accel", 0) => {
-            let accel = accel(&mut m5core2.imu);
+            let accel = m5core2.accel();
             Ok(Value::list(vec![Value::Num(accel.0), Value::Num(accel.1), Value::Num(accel.2)]))
         },
         ("gyro", 0) => {
-            let gyro = gyro(&mut m5core2.imu);
+            let gyro = m5core2.gyro();
             Ok(Value::list(vec![Value::Num(gyro.0), Value::Num(gyro.1), Value::Num(gyro.2)]))
         },
         ("temp", 0) => {
-            let temp = temp(&mut m5core2.imu);
+            let temp = m5core2.temp();
             Ok(Value::Num(temp))
         },
         (_, n) => Err(format!("the number of argments is not {n}")),

@@ -6,6 +6,8 @@ use esp32_hal::{
 };
 use embedded_hal::blocking::i2c::{Read, Write};
 
+use crate::m5core2::M5Core2;
+
 const CONFIG: u8 = 0x01;
 const PWR_MGMT_1: u8 = 0x6B;
 const ACCEL: u8 = 0x3B;
@@ -22,33 +24,35 @@ pub fn imu_init(mpu: &mut I2C<I2C0>, delay: &mut Delay) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn accel(mpu: &mut I2C<I2C0>) -> (f32, f32, f32) {
-    let mut accel_buf = [0; 6];
-
-    mpu.write(SLAVE_ADDR, &[ACCEL]).unwrap();
-    mpu.read(SLAVE_ADDR, &mut accel_buf).unwrap();
-
-    (concat(&accel_buf[0..2]) / 16384.0, concat(&accel_buf[2..4]) / 16384.0, concat(&accel_buf[4..6]) / 16384.0)
-}
-
-pub fn gyro(mpu: &mut I2C<I2C0>) -> (f32, f32, f32) {
-    let mut gyro_buf = [0; 6];
-
-    mpu.write(SLAVE_ADDR, &[GYRO]).unwrap();
-    mpu.read(SLAVE_ADDR, &mut gyro_buf).unwrap();
-
-    (concat(&gyro_buf[0..2]) / 131.0, concat(&gyro_buf[2..4]) / 131.0, concat(&gyro_buf[4..6]) / 131.0)
-}
-
-pub fn temp(mpu: &mut I2C<I2C0>) -> f32 {
-    let mut temp_buf = [0; 2];
-
-    mpu.write(SLAVE_ADDR, &[TEMP]).unwrap();
-    mpu.read(SLAVE_ADDR, &mut temp_buf).unwrap();
-
-    concat(&temp_buf) / 326.8 + 25.0
-}
-
 fn concat(arr: &[u8]) -> f32 {
     (((arr[0] as u16) << 8 | arr[1] as u16) as i16) as f32
+}
+
+impl<'a> M5Core2<'_> {
+    pub fn accel(&mut self) -> (f32, f32, f32) {
+        let mut accel_buf = [0; 6];
+
+        self.imu.write(SLAVE_ADDR, &[ACCEL]).unwrap();
+        self.imu.read(SLAVE_ADDR, &mut accel_buf).unwrap();
+
+        (concat(&accel_buf[0..2]) / 16384.0, concat(&accel_buf[2..4]) / 16384.0, concat(&accel_buf[4..6]) / 16384.0)
+    }
+
+    pub fn gyro(&mut self) -> (f32, f32, f32) {
+        let mut gyro_buf = [0; 6];
+
+        self.imu.write(SLAVE_ADDR, &[GYRO]).unwrap();
+        self.imu.read(SLAVE_ADDR, &mut gyro_buf).unwrap();
+
+        (concat(&gyro_buf[0..2]) / 131.0, concat(&gyro_buf[2..4]) / 131.0, concat(&gyro_buf[4..6]) / 131.0)
+    }
+
+    pub fn temp(&mut self) -> f32 {
+        let mut temp_buf = [0; 2];
+
+        self.imu.write(SLAVE_ADDR, &[TEMP]).unwrap();
+        self.imu.read(SLAVE_ADDR, &mut temp_buf).unwrap();
+
+        concat(&temp_buf) / 326.8 + 25.0
+    }
 }
