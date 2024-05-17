@@ -47,11 +47,11 @@ fn main() -> ! {
     interprete(&mut m5core2).unwrap();
 
     loop {
-        repl(&mut m5core2).unwrap();
+        repl(&mut m5core2)
     }
 }
 
-fn repl(m5core2: &mut M5Core2) -> Result<(), String> {
+fn repl(m5core2: &mut M5Core2) {
     let buf: &mut [u8] = &mut [0; 128];
     let mut env = Env::new();
     loop {
@@ -59,19 +59,10 @@ fn repl(m5core2: &mut M5Core2) -> Result<(), String> {
 
         let line = read_line(&mut m5core2.uart, buf);
         match line {
-            Ok("") => break Ok(()),
+            Ok("") => break,
             Ok(code) => {
-                let tokens = tokenize(&code)?;
-                if tokens.len() == 0 {
-                    continue;
-                } else {
-                    let nodes = parse(tokens)?;
-                    for node in nodes {
-                        match exec_line(node, &mut env, m5core2) {
-                            Ok(()) => {},
-                            Err(err) => println!("{err}"),
-                        }
-                    }
+                if let Err(err) = interprete_line(code, &mut env, m5core2) {
+                    println!("{err}");
                 }
             },
             Err(err) => println!("{err}"),
@@ -84,4 +75,15 @@ fn interprete(m5core2: &mut M5Core2) -> Result<(), String> {
     let tokens = tokenize(code)?;
     let nodes = parse(tokens)?;
     exec(nodes, m5core2)
+}
+
+fn interprete_line(code: &str, env: &mut Env, m5core2: &mut M5Core2) -> Result<(), String> {
+    let tokens = tokenize(code)?;
+    if !tokens.is_empty() {
+        let nodes = parse(tokens)?;
+        for node in nodes {
+            exec_line(node, env, m5core2)?;
+        }
+    }
+    Ok(())
 }
