@@ -19,7 +19,7 @@ const KEYWORDS: [&str; 13] = [
     "and", "or",
     "quote",
 ];
-const OPERATORS: [&str; 41] = [
+const OPERATORS: [&str; 42] = [
     "eq?", "neq?", "equal?",
     "list?", "pair?", "procedure?", "symbol?", "number?", "boolean?", "string?", "null?", "procedure?",
     "list", "length", "memq", "last", "append",
@@ -28,6 +28,7 @@ const OPERATORS: [&str; 41] = [
     "=", "<=", "<", ">=", ">", "+", "-", "*", "/",
     "string-append", "symbol->string", "string->symbol", "number->string", "string->number",
     "print",
+    "draw",
     "accel", "gyro", "temp",
 ];
 

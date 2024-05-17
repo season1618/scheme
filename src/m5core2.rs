@@ -4,7 +4,7 @@ pub mod lcd;
 mod pmu;
 
 pub use uart::read_line;
-pub use lcd::write;
+pub use lcd::draw;
 pub use imu::{accel, gyro, temp};
 
 use esp32_hal::{

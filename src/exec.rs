@@ -4,12 +4,12 @@ use esp_println::{print, println};
 use core::cell::RefCell;
 use alloc::{
     rc::Rc,
-    string::String,
+    string::{String, ToString},
     vec::Vec,
 };
 use alloc::{format, vec};
 
-use crate::m5core2::{M5Core2, accel, gyro, temp};
+use crate::m5core2::{M5Core2, draw, accel, gyro, temp};
 use Expr::*;
 use Value::*;
 
@@ -270,6 +270,12 @@ fn eval_opr(operator: &'static str, args: Vec<Value>, m5core2: &mut M5Core2) -> 
                 print!("{} ", arg);
             }
             println!("");
+            Ok(Value::Nil)
+        },
+        ("draw", _) => {
+            for arg in args {
+                draw(&mut m5core2.lcd, &arg.to_string()).expect("failed to draw lcd");
+            }
             Ok(Value::Nil)
         },
         ("accel", 0) => {

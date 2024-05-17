@@ -19,7 +19,7 @@ use alloc::{
 use crate::m5core2::{
     M5Core2,
     read_line,
-    write,
+    draw,
     accel, gyro, temp,
 };
 use crate::embedded::init_heap;
@@ -34,7 +34,7 @@ fn main() -> ! {
 
     let mut m5core2 = M5Core2::new();
 
-    write(&mut m5core2.lcd, "Scheme").unwrap();
+    draw(&mut m5core2.lcd, "Scheme").unwrap();
 
     let accel = accel(&mut m5core2.imu);
     let gyro = gyro(&mut m5core2.imu);
