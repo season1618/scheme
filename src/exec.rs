@@ -3,13 +3,13 @@ use crate::data::{TopLevel, Body, Defn, Expr, Value, Proc, Env};
 use esp_println::{print, println};
 use core::cell::RefCell;
 use alloc::{
-    rc::Rc,
     string::{String, ToString},
     vec::Vec,
 };
 use alloc::{format, vec};
 
 use crate::m5core2::M5Core2;
+use crate::myalloc::rc::Rc;
 use Expr::*;
 use Value::*;
 

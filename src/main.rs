@@ -5,6 +5,7 @@ extern crate alloc;
 
 mod m5core2;
 mod no_std;
+mod myalloc;
 mod data;
 mod lexer;
 mod parser;

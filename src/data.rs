@@ -6,11 +6,12 @@ use core::{
 };
 use alloc::{
     boxed::Box,
-    rc::Rc,
     string::{String, ToString},
     vec::Vec,
 };
 use alloc::format;
+
+use crate::myalloc::rc::Rc;
 
 use Value::*;
 

@@ -3,12 +3,12 @@ use crate::data::{Token, TopLevel, Body, Defn, Expr, Value};
 use core::cell::RefCell;
 use alloc::{
     boxed::Box,
-    rc::Rc,
     string::{String, ToString},
     vec::Vec,
 };
 use alloc::format;
 
+use crate::myalloc::rc::Rc;
 use Token::*;
 use Expr::*;
 use Value::*;
