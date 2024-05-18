@@ -1,9 +1,5 @@
 use esp_alloc::EspHeap;
-use esp_println::println;
-use core::{
-    mem::MaybeUninit,
-    panic::PanicInfo,
-};
+use core::mem::MaybeUninit;
 
 #[global_allocator]
 static ALLOCATOR: EspHeap = EspHeap::empty();
@@ -15,10 +11,4 @@ pub fn init_heap() {
     unsafe {
         ALLOCATOR.init(HEAP.as_mut_ptr() as *mut u8, HEAP_SIZE);
     }
-}
-
-#[panic_handler]
-fn panic(_panic: &PanicInfo<'_>) -> ! {
-    println!("{_panic}");
-    loop {}
 }

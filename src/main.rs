@@ -4,7 +4,7 @@
 extern crate alloc;
 
 mod m5core2;
-mod embedded;
+mod no_std;
 mod data;
 mod lexer;
 mod parser;
@@ -17,7 +17,7 @@ use alloc::{
 };
 
 use crate::m5core2::M5Core2;
-use crate::embedded::init_heap;
+use crate::no_std::init_heap;
 use crate::data::Env;
 use crate::lexer::tokenize;
 use crate::parser::parse;
