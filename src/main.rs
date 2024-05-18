@@ -54,7 +54,7 @@ fn repl(m5core2: &mut M5Core2) {
 
         let line = m5core2.read_line(buf);
         match line {
-            Ok("") => break,
+            Ok("exit") => { println!("exit"); break; },
             Ok(code) => {
                 if let Err(err) = interprete_line(code, &mut env, m5core2) {
                     println!("{err}");
