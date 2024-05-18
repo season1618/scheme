@@ -17,7 +17,7 @@ use alloc::{
 };
 
 use crate::m5core2::M5Core2;
-use crate::no_std::init_heap;
+use crate::no_std::{ALLOCATOR, init_heap};
 use crate::data::Env;
 use crate::lexer::tokenize;
 use crate::parser::parse;
@@ -59,6 +59,7 @@ fn repl(m5core2: &mut M5Core2) {
                 if let Err(err) = interprete_line(code, &mut env, m5core2) {
                     println!("{err}");
                 }
+                println!("heap used: {}, free: {}", ALLOCATOR.used(), ALLOCATOR.free());
             },
             Err(err) => println!("{err}"),
         }

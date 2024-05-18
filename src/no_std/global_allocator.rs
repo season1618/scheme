@@ -2,7 +2,7 @@ use esp_alloc::EspHeap;
 use core::mem::MaybeUninit;
 
 #[global_allocator]
-static ALLOCATOR: EspHeap = EspHeap::empty();
+pub static ALLOCATOR: EspHeap = EspHeap::empty();
 
 pub fn init_heap() {
     const HEAP_SIZE: usize = 32 * 1024;
