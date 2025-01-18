@@ -107,7 +107,7 @@ impl PartialOrd for Value {
         match (self, other) {
             (Value::Num(lhs), Value::Num(rhs)) => f32::partial_cmp(lhs, rhs),
             (Value::Bool(lhs), Value::Bool(rhs)) => bool::partial_cmp(lhs, rhs),
-            (Value::Str(lhs), Value::Str(rhs)) => String::partial_cmp(lhs, rhs),
+            (Value::Str(lhs), Value::Str(rhs)) => str::partial_cmp(lhs.as_str(), rhs.as_str()),
             _ => None,
         }
     }
